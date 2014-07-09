@@ -22,6 +22,7 @@
 #define INCLUDED_MST_ROUTE_IMPL_H
 
 #include <MST/route.h>
+#include <string>
 
 namespace gr {
   namespace MST {
@@ -29,16 +30,20 @@ namespace gr {
     class route_impl : public route
     {
      private:
-      string routing;
+      std::string routing;
       bool repair;
 
      public:
-      route_impl(string routing, bool repair);
+      route_impl(std::string routing, bool repair);
       ~route_impl();
+      
+      void rx_msg(pmt::pmt_t msg);
+      void tx_msg(pmt::pmt_t msg);
 
-      //int work(int noutput_items,
-	  //     gr_vector_const_void_star &input_items,
-	  //     gr_vector_void_star &output_items);
+      // Where all the action really happens
+      int work(int noutput_items,
+	       gr_vector_const_void_star &input_items,
+	       gr_vector_void_star &output_items);
     };
 
   } // namespace MST

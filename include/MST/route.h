@@ -24,6 +24,7 @@
 
 #include <MST/api.h>
 #include <gnuradio/sync_block.h>
+#include <string>
 
 namespace gr {
   namespace MST {
@@ -46,7 +47,7 @@ namespace gr {
        * class. MST::route::make is the public interface for
        * creating new instances.
        */
-      static sptr make(string routing, bool repair);
+      static sptr make(std::string routing, bool repair);
     };
 
   } // namespace MST

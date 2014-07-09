@@ -29,7 +29,7 @@ namespace gr {
   namespace MST {
 
     route::sptr
-    route::make(string routing, bool repair)
+    route::make(std::string routing, bool repair)
     {
       return gnuradio::get_initial_sptr
         (new route_impl(routing, repair));
@@ -38,7 +38,7 @@ namespace gr {
     /*
      * The private constructor
      */
-    route_impl::route_impl(string routing, bool repair)
+    route_impl::route_impl(std::string routing, bool repair)
       : gr::sync_block("route",
               gr::io_signature::make(0, 0, 0),
               gr::io_signature::make(0, 0, 0))
@@ -50,11 +50,11 @@ namespace gr {
       // Message Port initializations
       message_port_register_in(pmt::mp("from_mac"));
       set_msg_handler(pmt::mp("from_mac"),
-      boost::bind(&message_debug_impl::rx_msg, this, _1));
+      boost::bind(&route_impl::rx_msg, this, _1));
       
       message_port_register_in(pmt::mp("from_host"));
       set_msg_handler(pmt::mp("from_host"),
-      boost::bind(&message_debug_impl::tx_msg, this, _1));
+      boost::bind(&route_impl::tx_msg, this, _1));
       
       message_port_register_out(pmt::mp("to_mac"));
       message_port_register_out(pmt::mp("to_host"));
@@ -67,13 +67,13 @@ namespace gr {
     {
     }
 
-    /*int route_impl::work(int noutput_items, 
+    int route_impl::work(int noutput_items, 
       gr_vector_const_void_star &input_items,
       gr_vector_void_star &output_items)
     {
-       // Work function not required. Likely to be removed.
+       // Work function not required. Likely to be removed if possible.
       return noutput_items;
-    }*/
+    }
     
     /*
      * Message handlers
