@@ -1,0 +1,53 @@
+<block>
+  <name>Route</name>
+  <key>MST_route</key>
+  <category>MST</category>
+  <import>import MST</import>
+  <make>MST.route($routing, $repair)</make>
+ <sink>
+   <name>from_host</name>
+   <type>message</type>
+ </sink>
+ <sink>
+    <name>from_mac</name>
+    <type>message</type>
+ </sink>
+ <source>
+    <name>to_host</name>
+    <type>message</type>
+ </source>
+ <source>
+    <name>to_mac</name>
+    <type>to_mac</type>
+ </source>
+ <param>
+    <name>Routing</name>
+	    <key>routing</key>
+	    <type>enum</type>
+	    <option>
+		    <name>AODV</name>
+		    <key>AODV</key>
+	    </option>
+	    <option>
+		    <name>DSR</name>
+		    <key>DSR</key>
+	    </option>
+	    <option>
+	        <name>DSDV</name>
+	        <key>DSDV</key>
+	    </option>
+ </param>
+ <param>
+    <name>Repair</name>
+        <key>repair</key>
+        <type>enum</type>
+        <option>
+            <name>Enabled</name>
+            <key>true</key>
+        </option>
+        <option>
+            <name>Disabled</name>
+            <key>false</key>
+        </option>
+ </param>
+</block>
