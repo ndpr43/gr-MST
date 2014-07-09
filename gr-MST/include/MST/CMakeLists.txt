@@ -22,5 +22,5 @@
 ########################################################################
 install(FILES
     api.h
-    DESTINATION include/MST
+    route.h DESTINATION include/MST
 )
