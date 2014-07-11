@@ -23,6 +23,9 @@
 
 #include <MST/route.h>
 #include <string>
+#include <gnuradio/thread/thread.h>
+#include <gnuradio/blocks/pdu.h>
+#include <pmt/pmt.h>
 
 namespace gr {
   namespace MST {
@@ -32,13 +35,15 @@ namespace gr {
      private:
       std::string routing;
       bool repair;
+      
+      void rx_msg(pmt::pmt_t msg);
+      void tx_msg(pmt::pmt_t msg);
 
      public:
       route_impl(std::string routing, bool repair);
       ~route_impl();
       
-      void rx_msg(pmt::pmt_t msg);
-      void tx_msg(pmt::pmt_t msg);
+      
 
       // Where all the action really happens
       int work(int noutput_items,

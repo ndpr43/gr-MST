@@ -24,6 +24,8 @@
 
 #include <gnuradio/io_signature.h>
 #include "route_impl.h"
+#include <cstdio>
+#include <iostream>
 
 namespace gr {
   namespace MST {
@@ -47,16 +49,21 @@ namespace gr {
       this->routing = routing;
       this->repair = repair;
       
+      // Debug user input
+      std::cout << "Repair == " << repair << std::endl;
+      std::cout << "Routing == " << routing << std::endl;
+      
       // Message Port initializations
       message_port_register_in(pmt::mp("from_mac"));
+      message_port_register_in(pmt::mp("from_host"));
+      
       set_msg_handler(pmt::mp("from_mac"),
       boost::bind(&route_impl::rx_msg, this, _1));
-      
-      message_port_register_in(pmt::mp("from_host"));
       set_msg_handler(pmt::mp("from_host"),
       boost::bind(&route_impl::tx_msg, this, _1));
       
       message_port_register_out(pmt::mp("to_mac"));
+      message_port_register_out(pmt::mp("to_mac_arq"));
       message_port_register_out(pmt::mp("to_host"));
     }
 
@@ -78,12 +85,14 @@ namespace gr {
     /*
      * Message handlers
      */
-     void rx_msg(pmt::pmt_t msg)
+     void route_impl::rx_msg(pmt::pmt_t msg)
      {
+    	 std::cout << "Recieved message" <<std::endl;
      }
      
-     void tx_msg(pmt::pmt_t msg)
+     void route_impl::tx_msg(pmt::pmt_t msg)
      {
+    	 std::cout << "Transmitted message" <<std::endl;
      }
 
   } /* namespace MST */
