@@ -58,12 +58,12 @@ namespace gr {
       message_port_register_in(pmt::mp("from_host"));
       
       set_msg_handler(pmt::mp("from_mac"),
-      boost::bind(&route_impl::rx_msg, this, _1));
+      boost::bind(&route_impl::rx_msg_mac, this, _1));
       set_msg_handler(pmt::mp("from_host"),
-      boost::bind(&route_impl::tx_msg, this, _1));
+      boost::bind(&route_impl::rx_msg_host, this, _1));
       
       message_port_register_out(pmt::mp("to_mac"));
-      message_port_register_out(pmt::mp("to_mac_arq"));
+
       message_port_register_out(pmt::mp("to_host"));
     }
 
@@ -85,12 +85,12 @@ namespace gr {
     /*
      * Message handlers
      */
-     void route_impl::rx_msg(pmt::pmt_t msg)
+     void route_impl::rx_msg_mac(pmt::pmt_t msg)
      {
     	 std::cout << "Recieved message" <<std::endl;
      }
      
-     void route_impl::tx_msg(pmt::pmt_t msg)
+     void route_impl::rx_msg_host(pmt::pmt_t msg)
      {
     	 std::cout << "Transmitted message" <<std::endl;
      }

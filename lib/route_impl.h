@@ -22,7 +22,9 @@
 #define INCLUDED_MST_ROUTE_IMPL_H
 
 #include <MST/route.h>
-#include <string>
+#include "MST/aodv.h"
+#include <iostream>
+#include <vector>
 #include <gnuradio/thread/thread.h>
 #include <gnuradio/blocks/pdu.h>
 #include <pmt/pmt.h>
@@ -33,11 +35,16 @@ namespace gr {
     class route_impl : public route
     {
      private:
+      //User inputs
       std::string routing;
       bool repair;
-      
-      void rx_msg(pmt::pmt_t msg);
-      void tx_msg(pmt::pmt_t msg);
+      //Variables
+      std::vector<rTbEntry> rTbl;
+      std::vector<rreqTblEntry> rreqTbl;
+      std::vector<pmt::pmt_t> d_messages;
+      //Functions
+      void rx_msg_mac(pmt::pmt_t msg);
+      void rx_msg_host(pmt::pmt_t msg);
 
      public:
       route_impl(std::string routing, bool repair);

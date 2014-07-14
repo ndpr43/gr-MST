@@ -10,6 +10,10 @@
     <key>routing</key>
     <type>string</type>
     <option>
+    	<name>NONE</name>
+    	<key>NONE</key>
+    </option>
+    <option>
     	<name>AODV</name>
     	<key>AODV</key>
     </option>
@@ -44,11 +48,6 @@
   </source>
   <source>
     <name>to_mac</name>
-    <type>message</type>
-    <optional>1</optional>
-  </source>
-  <source>
-    <name>to_mac_arq</name>
     <type>message</type>
     <optional>1</optional>
   </source>

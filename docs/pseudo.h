@@ -1,6 +1,6 @@
 // Data structures
 /* Routing table
-struct RTbEntry
+struct rTbEntry
 {
   char dest;
   int destSeqNum;
