@@ -97,7 +97,7 @@ namespace gr {
     	meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255));
     	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));
     	pmt::pmt_t msg_out = pmt::cons(meta, vect);
-    	message_port_pub(pmt::mp("msg_out"), msg);
+    	message_port_pub(pmt::mp("to_mac"), msg);
      }
 
   } /* namespace MST */
