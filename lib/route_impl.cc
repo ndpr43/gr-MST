@@ -87,12 +87,17 @@ namespace gr {
      */
      void route_impl::rx_msg_mac(pmt::pmt_t msg)
      {
-    	 std::cout << "Recieved message" <<std::endl;
+    	 message_port_pub(pmt::mp("to_host"), msg);
      }
      
      void route_impl::rx_msg_host(pmt::pmt_t msg)
      {
-    	 std::cout << "Transmitted message" <<std::endl;
+    	pmt::pmt_t meta(pmt::car(msg));
+    	pmt::pmt_t vect(pmt::cdr(msg));
+    	meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255));
+    	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));
+    	pmt::pmt_t msg_out = pmt::cons(meta, vect);
+    	message_port_pub(pmt::mp("msg_out"), msg);
      }
 
   } /* namespace MST */
