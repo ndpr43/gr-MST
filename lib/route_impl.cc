@@ -87,16 +87,48 @@ namespace gr {
      */
      void route_impl::rx_msg_mac(pmt::pmt_t msg)
      {
-    	 message_port_pub(pmt::mp("to_host"), msg);
+    	 size_t offset(0);
+    	 pmt::pmt_t meta(pmt::car(msg));
+    	 pmt::pmt_t aodvPacket(pmt::cdr(msg)); // Extract aodvPacket from msg
+    	 unsigned const char * aodvPacketPtr = (const uint8_t*) uniform_vector_elements(aodvPacket, offset); // Get pointer to aodvPacket
+    	 pmt::pmt_t ipPacket = pmt::make_u8vector(pmt::length(aodvPacket)-24, 0x00); // Make empty IP packet vector
+    	 unsigned char * ipPacketPtr = (uint8_t*) uniform_vector_writable_elements(ipPacket, offset); // Get pointer to ipPacket
+    	 // Copy contents of IP packet into packet to be sent
+    	 for(int i=24; i < (pmt::length(aodvPacket)); i++)
+    	 {
+    		 ipPacketPtr[i] = aodvPacketPtr[i];
+    	 }
+    	 
+    	 pmt::pmt_t msg_out = pmt::cons(meta, ipPacket);
+    	 message_port_pub(pmt::mp("to_host"), msg_out);
      }
      
      void route_impl::rx_msg_host(pmt::pmt_t msg)
      {
-    	pmt::pmt_t meta(pmt::car(msg));
-    	pmt::pmt_t vect(pmt::cdr(msg));
-    	meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255));
-    	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));
-    	pmt::pmt_t msg_out = pmt::cons(meta, vect);
+    	size_t offset(0);
+    	pmt::pmt_t meta(pmt::car(msg)); 
+    	pmt::pmt_t ipPacket(pmt::cdr(msg));
+    	unsigned const char * ipPacketPtr = (const uint8_t*) uniform_vector_elements(ipPacket, offset); // Get read only pointer to IP packet
+    	pmt::pmt_t aodvHeader = pmt::make_u8vector(24, 0x00); // Construct null aodvHeader pmt vector
+    	pmt::pmt_t aodvPacket = pmt::make_u8vector(pmt::length(aodvHeader) + pmt::length(ipPacket), 0x00); // Construct null aodvPacket pmt vector
+    	unsigned char * aodvPacketPtr = (uint8_t*) uniform_vector_writable_elements(aodvPacket, offset); // Get pointer aodvPacket
+    	unsigned char * aodvHeaderPtr = (uint8_t*) uniform_vector_writable_elements(aodvHeader, offset); // Get pointer to aodv header
+    	
+    	// Copy AODV header into packet to be sent
+    	for(int i=0; i<pmt::length(aodvHeader); i++)
+    	{
+    		aodvPacketPtr[i] = aodvHeaderPtr[i];
+    	}
+    	// Copy contents of IP packet into packet to be sent
+    	for(int i=pmt::length(aodvHeader); i < (pmt::length(aodvHeader)+pmt::length(ipPacket)); i++)
+    	{
+    	 	aodvPacketPtr[i] = ipPacketPtr[i];
+    	}
+    	
+    	meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
+    	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+    	 	
+    	pmt::pmt_t msg_out = pmt::cons(meta, aodvPacket);
     	message_port_pub(pmt::mp("to_mac"), msg_out);
      }
 
