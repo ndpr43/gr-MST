@@ -90,13 +90,10 @@ namespace gr {
     	 pmt::pmt_t meta(pmt::car(msg)); // Get msg metadata
 		 pmt::pmt_t vect(pmt::cdr(msg)); // Get msg data
 		 std::vector<uint8_t> aodvPacket = pmt::u8vector_elements(vect);
-		 std::vector<uint8_t> aodvHeader;
-		 std::vector<uint8_t> ipPacket;
 		 
-	  	 aodvHeader.reserve(24);
-	  	 ipPacket.reserve(aodvPacket.size()-24);
-	 	 aodvHeader.insert(aodvHeader.end(), aodvPacket.begin(), aodvPacket.begin()+24);
-	 	 ipPacket.insert(ipPacket.end(), aodvPacket.begin()+25, aodvPacket.end());
+		 std::vector<uint8_t> aodvHeader(aodvPacket.begin(),aodvPacket.begin()+23);
+		 std::vector<uint8_t> ipPacket(aodvPacket.begin()+24,aodvPacket.end());
+	  
 			
 		 pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
 		 
@@ -114,7 +111,6 @@ namespace gr {
     	std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect); // Currently an Ethernet frame because of TunTap.
     	std::vector<uint8_t> aodvHeader(24, 2);
     	std::vector<uint8_t> aodvPacket;
-    	
     	aodvPacket.reserve(ipPacket.size() + aodvHeader.size());
     	aodvPacket.insert(aodvPacket.end(), aodvHeader.begin(), aodvHeader.end());
     	aodvPacket.insert(aodvPacket.end(), ipPacket.begin(), ipPacket.end());
