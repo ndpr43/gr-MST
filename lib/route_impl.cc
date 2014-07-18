@@ -87,7 +87,7 @@ namespace gr {
      */
      void route_impl::rx_msg_mac(pmt::pmt_t msg)
      {
-    	 size_t offset(0);
+    	 /*size_t offset(0);
     	 pmt::pmt_t meta(pmt::car(msg));
     	 pmt::pmt_t aodvPacket(pmt::cdr(msg)); // Extract aodvPacket from msg
     	 unsigned const char * aodvPacketPtr = (const uint8_t*) uniform_vector_elements(aodvPacket, offset); // Get pointer to aodvPacket
@@ -100,12 +100,13 @@ namespace gr {
     	 }
     	 
     	 pmt::pmt_t msg_out = pmt::cons(meta, ipPacket);
-    	 message_port_pub(pmt::mp("to_host"), msg_out);
+    	 message_port_pub(pmt::mp("to_host"), msg_out);*/
+    	 message_port_pub(mpt::mp("to_host"), msg_out);
      }
      
      void route_impl::rx_msg_host(pmt::pmt_t msg)
      {
-    	size_t offset(0);
+    	/*size_t offset(0);
     	pmt::pmt_t meta(pmt::car(msg)); 
     	pmt::pmt_t ipPacket(pmt::cdr(msg));
     	unsigned const char * ipPacketPtr = (const uint8_t*) uniform_vector_elements(ipPacket, offset); // Get read only pointer to IP packet
@@ -129,7 +130,8 @@ namespace gr {
     	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
     	 	
     	pmt::pmt_t msg_out = pmt::cons(meta, aodvPacket);
-    	message_port_pub(pmt::mp("to_mac"), msg_out);
+    	message_port_pub(pmt::mp("to_mac"), msg_out);*/
+    	message_port_pub(pmt::mp("to_mac"), msg);
      }
 
   } /* namespace MST */
