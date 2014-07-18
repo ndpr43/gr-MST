@@ -101,15 +101,16 @@ namespace gr {
     	 
     	 pmt::pmt_t msg_out = pmt::cons(meta, ipPacket);
     	 message_port_pub(pmt::mp("to_host"), msg_out);*/
-    	 message_port_pub(mpt::mp("to_host"), msg_out);
+    	 message_port_pub(pmt::mp("to_host"), msg);
      }
      
      void route_impl::rx_msg_host(pmt::pmt_t msg)
      {
-    	/*size_t offset(0);
+    	//size_t offset(0);
     	pmt::pmt_t meta(pmt::car(msg)); 
-    	pmt::pmt_t ipPacket(pmt::cdr(msg));
-    	unsigned const char * ipPacketPtr = (const uint8_t*) uniform_vector_elements(ipPacket, offset); // Get read only pointer to IP packet
+    	//pmt::pmt_t ipPacket(pmt::cdr(msg));
+    	pmt::pmt_t aodvPacket(pmt::cdr(msg)); //Remove me
+    	/*unsigned const char * ipPacketPtr = (const uint8_t*) uniform_vector_elements(ipPacket, offset); // Get read only pointer to IP packet
     	pmt::pmt_t aodvHeader = pmt::make_u8vector(24, 0x00); // Construct null aodvHeader pmt vector
     	pmt::pmt_t aodvPacket = pmt::make_u8vector(pmt::length(aodvHeader) + pmt::length(ipPacket), 0x00); // Construct null aodvPacket pmt vector
     	unsigned char * aodvPacketPtr = (uint8_t*) uniform_vector_writable_elements(aodvPacket, offset); // Get pointer aodvPacket
@@ -125,13 +126,12 @@ namespace gr {
     	{
     	 	aodvPacketPtr[i] = ipPacketPtr[i];
     	}
-    	
+    	*/
     	meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
     	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
     	 	
     	pmt::pmt_t msg_out = pmt::cons(meta, aodvPacket);
-    	message_port_pub(pmt::mp("to_mac"), msg_out);*/
-    	message_port_pub(pmt::mp("to_mac"), msg);
+    	message_port_pub(pmt::mp("to_mac"), msg_out);
      }
 
   } /* namespace MST */
