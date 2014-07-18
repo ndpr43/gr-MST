@@ -101,7 +101,7 @@ namespace gr {
 		 meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
 			
 		 pmt::pmt_t msg_out = pmt::cons(meta, outVect);
-    	 message_port_pub(pmt::mp("to_host"), msg);
+    	 message_port_pub(pmt::mp("to_host"), msg_out);
      }
      
      void route_impl::rx_msg_host(pmt::pmt_t msg)
