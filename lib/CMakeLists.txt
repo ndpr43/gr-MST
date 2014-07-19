@@ -27,6 +27,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 list(APPEND MST_sources
     route_impl.cc
+    tun_pdu_impl.cc
 )
 
 add_library(gnuradio-MST SHARED ${MST_sources})

@@ -95,9 +95,10 @@ namespace gr {
 		 //std::vector<uint8_t> ipPacket(aodvPacket.begin()+24,aodvPacket.end());
 		 std::vector<uint8_t> ethFrame(aodvPacket.begin()+24,aodvPacket.end());
 		 std::vector<uint8_t> ipPacket(ethFrame.begin()+14,ethFrame.end()-4);
-		 //std::cout <<"Recieved Packet from: " << static_cast<int>(ipPacket[12])<< ":" 
+		 /*std::cout <<"Recieved Packet from: " << static_cast<int>(ipPacket[12])<< ":" 
 				 << static_cast<int>(ipPacket[13])<< ":" << static_cast<int>(ipPacket[14])
 				 << ":" << static_cast<int>(ipPacket[15]) <<std::endl;
+		 */
 	  
 			
 		 //pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);

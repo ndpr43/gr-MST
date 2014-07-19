@@ -18,5 +18,6 @@
 # Boston, MA 02110-1301, USA.
 
 install(FILES
-    MST_route.xml DESTINATION share/gnuradio/grc/blocks
+    MST_route.xml
+    MST_tun_pdu.xml DESTINATION share/gnuradio/grc/blocks
 )

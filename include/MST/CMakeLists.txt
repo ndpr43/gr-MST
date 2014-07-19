@@ -22,5 +22,6 @@
 ########################################################################
 install(FILES
     api.h
-    route.h DESTINATION include/MST
+    route.h
+    tun_pdu.h DESTINATION include/MST
 )

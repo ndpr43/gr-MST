@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<block>
+  <name>tun_pdu</name>
+  <key>MST_tun_pdu</key>
+  <category>MST</category>
+  <import>import MST</import>
+  <make>MST.tun_pdu($ifn, $mtu)</make>
+  <param>
+    <name>Interface Name</name>
+    <key>ifn</key>
+    <value>tun0</value>
+    <type>string</type>
+  </param>
+  <param>
+    <name>MTU</name>
+    <key>mtu</key>
+    <value>10000</value>
+    <type>int</type>
+  </param>
+  <sink>
+    <name>pdus</name>
+    <type>message</type>
+    <optional>1</optional>
+  </sink>
+  <source>
+    <name>pdus</name>
+    <type>message</type>
+    <optional>1</optional>
+  </source>
+</block>
