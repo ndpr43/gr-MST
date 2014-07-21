@@ -3,14 +3,14 @@
  
 struct rTbEntry
 {
-  char dest;
+  unsigned int dest;
   int destSeqNum;
   bool validDestSeq;
   bool validR;
-  char nic;
-  char hopCnt;
-  char nxtHop;
-  char precursors[8];
+  //unsigned char nic;
+  unsigned char hopCnt;
+  unsigned int nxtHop;
+  std::vect<unsigned char> precursors[8];
   int lifetime;
 };
 

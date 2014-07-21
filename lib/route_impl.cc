@@ -89,52 +89,48 @@ namespace gr {
      {
     	 pmt::pmt_t meta(pmt::car(msg)); // Get msg metadata
 		 pmt::pmt_t vect(pmt::cdr(msg)); // Get msg data
-		 std::vector<uint8_t> aodvPacket = pmt::u8vector_elements(vect);
 		 
-		 std::vector<uint8_t> aodvHeader(aodvPacket.begin(),aodvPacket.begin()+23);
-		 std::vector<uint8_t> ipPacket(aodvPacket.begin()+24,aodvPacket.end());
-		 //std::vector<uint8_t> ethFrame(aodvPacket.begin()+24,aodvPacket.end());
-		 //std::vector<uint8_t> ipPacket(ethFrame.begin()+14,ethFrame.end()-4);
-		 /*std::cout <<"Recieved Packet from: " << static_cast<int>(ipPacket[12])<< ":" 
-				 << static_cast<int>(ipPacket[13])<< ":" << static_cast<int>(ipPacket[14])
-				 << ":" << static_cast<int>(ipPacket[15]) <<std::endl;
-		 */
-		 /*std::cout <<"------------------"<<std::endl;
-		 for (int i=0; i<24; i++)
+		 if(routing=="AODV")
 		 {
-			 std::cout << static_cast<int>(ipPacket[i]);
-			 if(i%4 == 3)
-				 std::cout << std::endl;
-		 }*/
-	  
-			
-		 pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
-		 //pmt::pmt_t outVect = pmt::init_u8vector (ethFrame.size(), ethFrame);
-		 
-		 meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
-		 meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-			
-		 pmt::pmt_t msg_out = pmt::cons(meta, outVect);
-    	 message_port_pub(pmt::mp("to_host"), msg_out);
+			 std::vector<uint8_t> aodvPacket = pmt::u8vector_elements(vect);
+			 
+			 std::vector<uint8_t> aodvHeader(aodvPacket.begin(),aodvPacket.begin()+23);
+			 std::vector<uint8_t> ipPacket(aodvPacket.begin()+24,aodvPacket.end());
+			 		
+		  
+				
+			 pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
+			 //pmt::pmt_t outVect = pmt::init_u8vector (ethFrame.size(), ethFrame);
+			 
+			 meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
+			 meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+			 
+				
+			 pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+			 message_port_pub(pmt::mp("to_host"), msg_out);
+		 }
      }
      
      void route_impl::rx_msg_host(pmt::pmt_t msg)
      {
     	pmt::pmt_t meta(pmt::car(msg)); // Get msg metadata
     	pmt::pmt_t vect(pmt::cdr(msg)); // Get msg data
-    	std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect); // Currently an Ethernet frame because of TunTap.
-    	std::vector<uint8_t> aodvHeader(24, 2);
-    	std::vector<uint8_t> aodvPacket;
-    	aodvPacket.reserve(ipPacket.size() + aodvHeader.size());
-    	aodvPacket.insert(aodvPacket.end(), aodvHeader.begin(), aodvHeader.end());
-    	aodvPacket.insert(aodvPacket.end(), ipPacket.begin(), ipPacket.end());
-    	   	
-    	pmt::pmt_t outVect = pmt::init_u8vector (aodvPacket.size(), aodvPacket);
-    	meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
-    	meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-    	 	
-    	pmt::pmt_t msg_out = pmt::cons(meta, outVect);
-    	message_port_pub(pmt::mp("to_mac"), msg_out);
+    	if(routing=="AODV")
+    	{
+			std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect); // Currently an Ethernet frame because of TunTap.
+			std::vector<uint8_t> aodvHeader(24, 2);
+			std::vector<uint8_t> aodvPacket;
+			aodvPacket.reserve(ipPacket.size() + aodvHeader.size());
+			aodvPacket.insert(aodvPacket.end(), aodvHeader.begin(), aodvHeader.end());
+			aodvPacket.insert(aodvPacket.end(), ipPacket.begin(), ipPacket.end());
+				
+			pmt::pmt_t outVect = pmt::init_u8vector (aodvPacket.size(), aodvPacket);
+			meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
+			meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+				
+			pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+			message_port_pub(pmt::mp("to_mac"), msg_out);
+    	}
      }
 
   } /* namespace MST */
