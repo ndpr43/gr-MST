@@ -41,7 +41,8 @@ namespace gr {
       //Variables
       std::vector<rTbEntry> rTbl;
       std::vector<rreqTblEntry> rreqTbl;
-      std::vector<pmt::pmt_t> d_messages;
+      std::vector<pmt::pmt_t> d_messages;   
+      
       //Functions
       void rx_msg_mac(pmt::pmt_t msg);
       void rx_msg_host(pmt::pmt_t msg);

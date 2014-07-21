@@ -92,17 +92,24 @@ namespace gr {
 		 std::vector<uint8_t> aodvPacket = pmt::u8vector_elements(vect);
 		 
 		 std::vector<uint8_t> aodvHeader(aodvPacket.begin(),aodvPacket.begin()+23);
-		 //std::vector<uint8_t> ipPacket(aodvPacket.begin()+24,aodvPacket.end());
-		 std::vector<uint8_t> ethFrame(aodvPacket.begin()+24,aodvPacket.end());
-		 std::vector<uint8_t> ipPacket(ethFrame.begin()+14,ethFrame.end()-4);
+		 std::vector<uint8_t> ipPacket(aodvPacket.begin()+24,aodvPacket.end());
+		 //std::vector<uint8_t> ethFrame(aodvPacket.begin()+24,aodvPacket.end());
+		 //std::vector<uint8_t> ipPacket(ethFrame.begin()+14,ethFrame.end()-4);
 		 /*std::cout <<"Recieved Packet from: " << static_cast<int>(ipPacket[12])<< ":" 
 				 << static_cast<int>(ipPacket[13])<< ":" << static_cast<int>(ipPacket[14])
 				 << ":" << static_cast<int>(ipPacket[15]) <<std::endl;
 		 */
+		 /*std::cout <<"------------------"<<std::endl;
+		 for (int i=0; i<24; i++)
+		 {
+			 std::cout << static_cast<int>(ipPacket[i]);
+			 if(i%4 == 3)
+				 std::cout << std::endl;
+		 }*/
 	  
 			
-		 //pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
-		 pmt::pmt_t outVect = pmt::init_u8vector (ethFrame.size(), ethFrame);
+		 pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
+		 //pmt::pmt_t outVect = pmt::init_u8vector (ethFrame.size(), ethFrame);
 		 
 		 meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
 		 meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
