@@ -71,7 +71,7 @@ namespace gr {
       memset(dev_cstr, 0x00, 1024);
       strncpy(dev_cstr, dev.c_str(), std::min(sizeof(dev_cstr), dev.size()));
 
-      d_fd = tun_alloc(dev_cstr,IFF_TUN | IFF_NO_PI);
+      d_fd = tun_alloc(dev_cstr, (IFF_TUN | IFF_NO_PI));
       if (d_fd <= 0)
         throw std::runtime_error("gr::tun_pdu::make: tun_alloc failed (are you running as root?)");
 
