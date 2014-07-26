@@ -58,9 +58,9 @@ namespace gr {
       message_port_register_in(pmt::mp("from_host"));
       
       set_msg_handler(pmt::mp("from_mac"),
-      boost::bind(&route_impl::rx_msg_mac, this, _1));
+      boost::bind(&route_impl::rx_msg_mac, this, _1)); // Setting message handler for incoming messages from mac layer
       set_msg_handler(pmt::mp("from_host"),
-      boost::bind(&route_impl::rx_msg_host, this, _1));
+      boost::bind(&route_impl::rx_msg_host, this, _1)); // Setting message handler for incoming messages from host
       
       message_port_register_out(pmt::mp("to_mac"));
 
@@ -140,7 +140,38 @@ namespace gr {
 		          | static_cast<unsigned int>(aodvPacket[23]));
 		        // TODO: route the packet
 		        // 
-		        //	   
+		        //	
+            if(destIp == myIP) //RREP logic
+            {
+              
+            }
+            else // forwarding logic
+            {
+              for(int i=0; i<rxrreqTbl.size(); i++)
+              {
+                if(rxrreqTbl[i].destSeqNum==destSeqNum && 
+                rxrreqTbl[i].srcIp==srcIp && rxrreqTbl[i].destIp==destIp && 
+                rxrreqTbl[i].rreqId==rreqId) // We have an entry
+                {
+                  if(/*currentTime - rxrreqTbl[i].time <= PATH_DISCOVERY_TIME*/)
+                  {
+                    // Do nothing
+                  }
+                  else
+                  {
+                    forward(ipPacket,BROADCAST_IP);
+                  }
+                }
+                else // We don't have an entry
+                {
+                  // Make entry in route table
+                  rxrreqTblEntry temp2 = {rreqId, destIp, srcIp, destSeqNum, /*CurrentTime*/}; //Fix ME!
+                  rxrreqTbl.pushback(temp2);// Make entry in rxrreq table
+                  forward(ipPacket,BROADCAST_IP);
+                }
+              }
+            }
+				
 		        break;
               }
 			  case 2:

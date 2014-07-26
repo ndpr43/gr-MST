@@ -41,6 +41,7 @@ namespace gr {
       //Variables
       std::vector<rTbEntry> rTbl;
       std::vector<rreqTblEntry> rreqTbl;
+	  std::vector<rxrreqTblEntry> rxrreqTbl;
       std::vector<pmt::pmt_t> msgQueue; //From host   
       
       //Functions

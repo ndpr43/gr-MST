@@ -3,23 +3,36 @@
  
 struct rTbEntry
 {
-  unsigned int dest;
+  unsigned int destIp;
   int destSeqNum;
   bool validDestSeq;
   bool validR;
+  unsigned char status;  // [0,0,0,0,valid,invalid,repairable,being repaired]
   //unsigned char nic;
   unsigned char hopCnt;
-  unsigned int nxtHop;
+  unsigned int nxtHop; // MAC Address
   std::vector<unsigned char> precursors[8];
-  int lifetime;
+  int lifetime; // in msec
 };
+
+  
 
 struct rreqTblEntry
 {
- char dest;
+ unsigned int destIp;
  char retryCnt;
  int lifetime;
 };
+
+struct rxrreqTblEntry
+{
+  unsigned int rreqId;
+  unsigned int destIp;
+  unsigned int srcIp;
+  int destSeqNum;
+  int time;
+};
+  
 
 //Constants--Make sure to include extern calls
 // FLAG CONSTANTS
