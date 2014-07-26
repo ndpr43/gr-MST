@@ -41,11 +41,12 @@ namespace gr {
       //Variables
       std::vector<rTbEntry> rTbl;
       std::vector<rreqTblEntry> rreqTbl;
-      std::vector<pmt::pmt_t> d_messages;   
+      std::vector<pmt::pmt_t> msgQueue; //From host   
       
       //Functions
       void rx_msg_mac(pmt::pmt_t msg);
       void rx_msg_host(pmt::pmt_t msg);
+      unsigned short ip4_checksum(std::vector<int> &ipPacket);
 
      public:
       route_impl(std::string routing, bool repair);

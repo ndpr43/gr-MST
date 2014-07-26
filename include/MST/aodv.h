@@ -10,7 +10,7 @@ struct rTbEntry
   //unsigned char nic;
   unsigned char hopCnt;
   unsigned int nxtHop;
-  std::vect<unsigned char> precursors[8];
+  std::vector<unsigned char> precursors[8];
   int lifetime;
 };
 
