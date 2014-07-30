@@ -28,6 +28,9 @@
 #include <gnuradio/thread/thread.h>
 #include <gnuradio/blocks/pdu.h>
 #include <pmt/pmt.h>
+#include <iostream>
+#include <chrono>
+#include <ctime>
 
 namespace gr {
   namespace MST {
@@ -37,25 +40,78 @@ namespace gr {
      private:
       //User inputs
       std::string routing;
-      bool repair;
+      unsigned int HOST_IP;
+      //AODV user inputs
+      bool ROUTE_REPAIR;
+      bool ROUTE_ACK;
+      bool DEST_ONLY;
+      bool GRATUITOUS_RREP;
+      bool DESTINATION_ONLY;
+      unsigned char RREQ_RETRIES;
+      unsigned char TTL_THRESHOLD;
+      unsigned char TTL_INCREMENT;
+      unsigned char TTL_MAX;
+      unsigned char TTL_START;
+      unsigned char NET_DIAMETER;
+      std::chrono::milliseconds DELETE_PERIOD; //Period of inactivity before route is deleted
+      std::chrono::milliseconds NODE_TRAVERSAL_TIME; //Amount of time it takes for a packet to be stored-and-forwarded
+      std::chrono::milliseconds ACTIVE_ROUTE_TIMEOUT; //Period of inactivity before a route is marked as invalid
+      
+     
+      
+      
       //Variables
-      std::vector<rTbEntry> rTbl;
+      unsigned int hostRreqId;
+      int hostSeqNum;
+      std::vector<rTblEntry> rTbl;
       std::vector<rreqTblEntry> rreqTbl;
-	  std::vector<rxrreqTblEntry> rxrreqTbl;
-      std::vector<pmt::pmt_t> msgQueue; //From host   
+      std::vector<pmt::pmt_t> txBuffer; //From host
+      std::vector<pmt::pmt_t> rxBuffer; //From MAC. For use during route repair.
+      
       
       //Functions
       void rx_msg_mac(pmt::pmt_t msg);
       void rx_msg_host(pmt::pmt_t msg);
-      unsigned short ip4_checksum(std::vector<int> &ipPacket);
+      unsigned short ip4_checksum(std::vector<unsigned char> &ipPkt);
+      void decTTL(std::vector<unsigned char> &ipPacket);
+      void routeInvalid(int j/*rTbl Index*/, unsigned int destIp);
+      void newRoute(unsigned int destIp);
+      void sendRREQ(unsigned int destIp, unsigned char ttl, bool J, bool R, bool U, unsigned int destSeqNum );
+      std::vector<unsigned char> makeIP4Pkt(unsigned int sourceIp=0,
+                                            unsigned int destIp=0,
+                                            unsigned int ttl=64,
+                                            unsigned char version=4,
+                                            unsigned char ihl=4,
+                                            unsigned char dscp=0,
+                                            unsigned char ecn=0,
+                                            unsigned char flags=0,
+                                            unsigned char protocol=138,
+                                           unsigned short totalLength=20,
+                                           unsigned short fragmentOffset=0,
+                                           unsigned short identfication=0,
+                                           unsigned short headerChecksum=0);
+      
+      std::vector<unsigned char> makeUDPPkt (unsigned short srcPort=0,
+                                             unsigned short destPort=654,
+                                             unsigned short length=8+24,
+                                             unsigned short checksum=0);
+      std::vector<unsigned char> makeRREQPkt (unsigned int rreqId, 
+                                              unsigned int destIp,
+                                                      bool J=false,
+                                                      bool R=false,
+                                                      bool G=false,
+                                                      bool D=false,
+                                                      bool U=true,
+                                              unsigned int destSeqNum=0,
+                                              unsigned int origIp=0,
+                                              unsigned int origSeqNum=0);
+      
 
      public:
       route_impl(std::string routing, bool repair);
       ~route_impl();
       
-      
-
-      // Where all the action really happens
+      // Where none of the action really happens
       int work(int noutput_items,
 	       gr_vector_const_void_star &input_items,
 	       gr_vector_void_star &output_items);

@@ -25,6 +25,7 @@ cmake_minimum_required(VERSION 2.6)
 project(gr-MST CXX C)
 enable_testing()
 
+
 #select the release build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE "Release")
@@ -42,6 +43,7 @@ if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
     add_definitions(-fvisibility=hidden)
 endif()
 
+set (CMAKE_CXX_FLAGS "--std=c++11")
 ########################################################################
 # Find boost
 ########################################################################

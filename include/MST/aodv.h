@@ -1,29 +1,37 @@
 #ifndef AODV_H
 #define AODV_H
+
+#include <chrono>
+#include <ctime>
  
-struct rTbEntry
+struct rTblEntry
 {
   unsigned int destIp;
   int destSeqNum;
   bool validDestSeq;
-  bool validR;
-  unsigned char status;  // [0,0,0,0,valid,invalid,repairable,being repaired]
+  bool valid;
+  bool repairable;
+  bool beingRepaired;
   //unsigned char nic;
   unsigned char hopCnt;
   unsigned int nxtHop; // MAC Address
-  std::vector<unsigned char> precursors[8];
-  int lifetime; // in msec
+  std::vector<unsigned int> precursors;
+  std::chrono::time_point<std::chrono::system_clock> lifetime; // in msec
 };
-
-  
 
 struct rreqTblEntry
 {
  unsigned int destIp;
+ unsigned int rreqId;
+ unsigned int srcIp;
+ unsigned char ttl;
  char retryCnt;
- int lifetime;
+ std::chrono::time_point<std::chrono::system_clock> lifetime;
+ std::chrono::milliseconds waitTime;
+ bool repair;
 };
 
+/*
 struct rxrreqTblEntry
 {
   unsigned int rreqId;
@@ -32,7 +40,16 @@ struct rxrreqTblEntry
   int destSeqNum;
   int time;
 };
-  
+*/
+
+// #defines
+#define BLACKLIST_TIMEOUT (RREQ_RETRIES * NET_TRAVERSAL_TIME)
+#define MAX_REPAIR_TTL (0.3 * NET_DIAMETER)
+#define MY_ROUTE_TIMEOUT (2 * ACTIVE_ROUTE_TIMEOUT)
+//#define NEXT_HOP_WAIT NODE_TRAVERSAL_TIME +10
+#define NET_TRAVERSAL_TIME (2 * NODE_TRAVERSAL_TIME * NET_DIAMETER) //Period of time to wait before resending a RREQ
+#define PATH_DISCOVER_TIME (2 * NET_TRAVERSAL_TIME) //Period of time to wait before deleting a RREQ
+#define RING_TRAVERSAL_TIME (2 * NODE_TRAVERSAL_TIME * (TTL_VALUE + TIMEOUT_BUFFER))//FIXME
 
 //Constants--Make sure to include extern calls
 // FLAG CONSTANTS
