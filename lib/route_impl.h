@@ -46,14 +46,12 @@ namespace gr {
       bool ROUTE_ACK;
       bool DEST_ONLY;
       bool GRATUITOUS_RREP;
-      bool DESTINATION_ONLY;
       unsigned char RREQ_RETRIES;
       unsigned char TTL_THRESHOLD;
       unsigned char TTL_INCREMENT;
       unsigned char TTL_MAX;
       unsigned char TTL_START;
       unsigned char NET_DIAMETER;
-      std::chrono::milliseconds DELETE_PERIOD; //Period of inactivity before route is deleted
       std::chrono::milliseconds NODE_TRAVERSAL_TIME; //Amount of time it takes for a packet to be stored-and-forwarded
       std::chrono::milliseconds ACTIVE_ROUTE_TIMEOUT; //Period of inactivity before a route is marked as invalid
       
@@ -76,6 +74,7 @@ namespace gr {
       void decTTL(std::vector<unsigned char> &ipPacket);
       void routeInvalid(int j/*rTbl Index*/, unsigned int destIp);
       void newRoute(unsigned int destIp);
+      void sendRERR(unsigned int destIp, unsigned int unreachableIp, bool N = false);
       void sendRREQ(unsigned int destIp, unsigned char ttl, bool J, bool R, bool U, unsigned int destSeqNum );
       std::vector<unsigned char> makeIP4Pkt(unsigned int sourceIp=0,
                                             unsigned int destIp=0,
@@ -105,10 +104,23 @@ namespace gr {
                                               unsigned int destSeqNum=0,
                                               unsigned int origIp=0,
                                               unsigned int origSeqNum=0);
+      std::vector<unsigned char> makeRERRPkt(std::vector<std::vector<unsigned int>> pair, bool N=false);
       
 
      public:
-      route_impl(std::string routing, bool repair);
+      route_impl(std::string routing,
+                 bool repair, 
+                 bool ack, 
+                 bool destOnly, 
+                 bool gratutiousRrep, 
+                 unsigned char rreqRetries, 
+                 unsigned char ttlThreshold, 
+                 unsigned char ttlIncrement, 
+                 unsigned char ttlMax, 
+                 unsigned char ttlStart, 
+                 unsigned char netDiameter, 
+                 unsigned int nodeTraversalTime, 
+                 unsigned int activeRouteTimeout);
       ~route_impl();
       
       // Where none of the action really happens

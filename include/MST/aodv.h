@@ -7,7 +7,7 @@
 struct rTblEntry
 {
   unsigned int destIp;
-  int destSeqNum;
+  unsigned int destSeqNum;
   bool validDestSeq;
   bool valid;
   bool repairable;
@@ -43,6 +43,7 @@ struct rxrreqTblEntry
 */
 
 // #defines
+#define DELETE_PERIOD (5*ACTIVE_ROUTE_TIMEOUT)//Period of inactivity before route is deleted
 #define BLACKLIST_TIMEOUT (RREQ_RETRIES * NET_TRAVERSAL_TIME)
 #define MAX_REPAIR_TTL (0.3 * NET_DIAMETER)
 #define MY_ROUTE_TIMEOUT (2 * ACTIVE_ROUTE_TIMEOUT)

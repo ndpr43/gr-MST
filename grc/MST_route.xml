@@ -4,7 +4,19 @@
   <key>MST_route</key>
   <category>MST</category>
   <import>import MST</import>
-  <make>MST.route($routing, $repair)</make>
+  <make>MST.route($routing,
+                  $repair, 
+                  $ack, 
+                  $destOnly, 
+                  $gratutiousRrep, 
+                  $rreqRetries, 
+                  $ttlThreshold, 
+                  $ttlIncrement, 
+                  $ttlMax, 
+                  $ttlStart, 
+                  $netDiameter, 
+                  $nodeTraversalTime, 
+                  $activeRouteTimeout)</make>
   <param>
     <name>Routing</name>
     <key>routing</key>
@@ -19,8 +31,34 @@
     </option>
   </param>
   <param>
-    <name>Repair</name>
+    <name>Route Repair</name>
     <key>repair</key>
+    <type>enum</type>
+    <option>
+    	<name>Disabled</name>
+    	<key>False</key>
+    </option>
+    <option>
+    	<name>Enabled</name>
+    	<key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>Route Acknowledgement</name>
+    <key>ack</key>
+    <type>enum</type>
+    <option>
+        <name>Disabled</name>
+    	<key>False</key>
+    </option>
+    <option>
+		<name>Enabled</name>
+    	<key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>Destination Only</name>
+    <key>destOnly</key>
     <type>enum</type>
     <option>
     	<name>Enabled</name>
@@ -30,6 +68,61 @@
     	<name>Disabled</name>
     	<key>False</key>
     </option>
+  </param>
+  <param>
+    <name>Gratutious RREP</name>
+    <key>gratutiousRrep</key>
+    <type>enum</type>
+    <option>
+    	<name>Enabled</name>
+    	<key>True</key>
+    </option>
+    <option>
+    	<name>Disabled</name>
+    	<key>False</key>
+    </option>
+  </param>
+  <param>
+	  <name>Maximum RREQ Retries</name>
+	  <key>rreqRetries</key>
+	  <value>10</value>
+	  <type>int</type>
+  </param>
+  <param>
+	  <name>Initial TTL</name>
+	  <key>ttlStart</key>
+	  <value>8</value>
+	  <type>int</type>
+  </param>
+  <param>
+	  <name>TTL Threshold</name>
+	  <key>ttlThreshold</key>
+	  <value>16</value>
+	  <type>int</type>
+  </param>
+  <param>
+	  <name>Maximum TTL</name>
+	  <key>ttlMax</key>
+	  <value>255</value>
+	  <type>int</type>
+  </param>
+  <param>
+	  <name>Net Diameter</name>
+	  <key>netDiameter</key>
+	  <value>16</value>
+	  <type>int</type>
+  </param>
+  <param>
+	  <name>Node Traversal Time (ms)</name>
+	  <key>nodeTraversalTime</key>
+	  <value>10</value>
+	  <type>int</type>
+  </param>
+  <param>
+	  <name>Active Route Timeout (ms)</name>
+	  <key>activeRouteTimeout</key>
+	  <value>3000</value>
+	  <type>int</type>
   </param>
   <sink>
     <name>from_host</name>

@@ -47,7 +47,19 @@ namespace gr {
        * class. MST::route::make is the public interface for
        * creating new instances.
        */
-      static sptr make(std::string routing, bool repair);
+      static sptr make(std::string routing,
+                       bool repair, 
+                       bool ack, 
+                       bool destOnly, 
+                       bool gratutiousRrep, 
+                       unsigned char rreqRetries, 
+                       unsigned char ttlThreshold, 
+                       unsigned char ttlIncrement, 
+                       unsigned char ttlMax, 
+                       unsigned char ttlStart, 
+                       unsigned char netDiameter, 
+                       unsigned int nodeTraversalTime, 
+                       unsigned int activeRouteTimeout);
     };
 
   } // namespace MST

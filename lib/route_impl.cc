@@ -33,16 +33,52 @@ namespace gr {
   namespace MST {
     
     route::sptr
-    route::make(std::string routing, bool repair)
+    route::make(std::string routing,
+                bool repair, 
+                bool ack, 
+                bool destOnly, 
+                bool gratutiousRrep, 
+                unsigned char rreqRetries, 
+                unsigned char ttlThreshold, 
+                unsigned char ttlIncrement, 
+                unsigned char ttlMax, 
+                unsigned char ttlStart, 
+                unsigned char netDiameter, 
+                unsigned int nodeTraversalTime, 
+                unsigned int activeRouteTimeout)
     {
       return gnuradio::get_initial_sptr
-        (new route_impl(routing, repair));
+        (new route_impl(routing,
+                        repair, 
+                        ack, 
+                        destOnly, 
+                        gratutiousRrep, 
+                        rreqRetries, 
+                        ttlThreshold, 
+                        ttlIncrement, 
+                        ttlMax, 
+                        ttlStart, 
+                        netDiameter, 
+                        nodeTraversalTime, 
+                        activeRouteTimeout));
     }
 
     /*
      * The private constructor
      */
-    route_impl::route_impl(std::string routing, bool repair)
+    route_impl::route_impl(std::string routing,
+                           bool repair, 
+                           bool ack, 
+                           bool destOnly, 
+                           bool gratutiousRrep, 
+                           unsigned char rreqRetries, 
+                           unsigned char ttlThreshold, 
+                           unsigned char ttlIncrement, 
+                           unsigned char ttlMax, 
+                           unsigned char ttlStart, 
+                           unsigned char netDiameter, 
+                           unsigned int nodeTraversalTime, 
+                           unsigned int activeRouteTimeout)
       : gr::sync_block("route",
       gr::io_signature::make(0, 0, 0),
       gr::io_signature::make(0, 0, 0))
@@ -52,21 +88,18 @@ namespace gr {
       this-> HOST_IP;
       if(routing=="AODV")
       {
-        this->ROUTE_REPAIR = repair;
-        /*this-> ROUTE_ACK;
-        this-> DEST_ONLY;
-        this-> GRATUITOUS_RREP;
-        this-> DESTINATION_ONLY;
-        this-> RREQ_RETRIES;
-        this-> TTL_THRESHOLD;
-        this-> TTL_INCREMENT;
-        this-> TTL_MAX;
-        this-> TTL_START;
-        this-> NET_DIAMETER;
-        this-> DELETE_PERIOD;
-        this-> NODE_TRAVERSAL_TIME;
-        this-> ACTIVE_ROUTE_TIMEOUT;
-        */
+        ROUTE_REPAIR = repair;
+        ROUTE_ACK = ack;
+        DEST_ONLY = destOnly;
+        GRATUITOUS_RREP = gratutiousRrep;
+        RREQ_RETRIES = static_cast<unsigned char>(gratutiousRrep);
+        TTL_THRESHOLD = static_cast<unsigned char>(ttlThreshold);
+        TTL_INCREMENT = static_cast<unsigned char>(ttlIncrement);
+        TTL_MAX = static_cast<unsigned char>(ttlMax);
+        TTL_START = static_cast<unsigned char>(ttlStart);
+        NET_DIAMETER = static_cast<unsigned char>(netDiameter);
+        NODE_TRAVERSAL_TIME = std::chrono::milliseconds(nodeTraversalTime);
+        ACTIVE_ROUTE_TIMEOUT = std::chrono::milliseconds(activeRouteTimeout);
       }
       
       // Debug user input
@@ -177,7 +210,7 @@ namespace gr {
                     | static_cast<unsigned int>(aodvPacket[9])<<(8*2) 
                     | static_cast<unsigned int>(aodvPacket[10])<<(8*1)
                     | static_cast<unsigned int>(aodvPacket[11]);
-                  int destSeqNum = static_cast<int>(static_cast<unsigned int>(aodvPacket[12])<<(8*3) 
+                  unsigned int destSeqNum = static_cast<unsigned int>(static_cast<unsigned int>(aodvPacket[12])<<(8*3) 
                     | static_cast<unsigned int>(aodvPacket[13])<<(8*2) 
                     | static_cast<unsigned int>(aodvPacket[14])<<(8*1)
                     | static_cast<unsigned int>(aodvPacket[15]));
@@ -185,7 +218,7 @@ namespace gr {
                     | static_cast<unsigned int>(aodvPacket[17])<<(8*2) 
                     | static_cast<unsigned int>(aodvPacket[18])<<(8*1)
                     | static_cast<unsigned int>(aodvPacket[19]);
-                  int origSeqNum = static_cast<int>(static_cast<unsigned int>(aodvPacket[20])<<(8*3) 
+                  unsigned int origSeqNum = static_cast<int>(static_cast<unsigned int>(aodvPacket[20])<<(8*3) 
                     | static_cast<unsigned int>(aodvPacket[21])<<(8*2) 
                     | static_cast<unsigned int>(aodvPacket[22])<<(8*1) 
                     | static_cast<unsigned int>(aodvPacket[23]));
@@ -201,7 +234,7 @@ namespace gr {
                     }
                     //Increment hop count
                     //Determine Seq num
-                    if (hostSeqNum - destSeqNum < 0)// hostSeqNum > destSeqNum
+                    if (hostSeqNum > destSeqNum)// hostSeqNum > destSeqNum
                     {
                       destSeqNum = hostSeqNum;
                     }
@@ -276,7 +309,7 @@ namespace gr {
                     | static_cast<unsigned int>(aodvPacket[5])<<(8*2)
                     | static_cast<unsigned int>(aodvPacket[6])<<(8*1)
                     | static_cast<unsigned int>(aodvPacket[7]);
-                  int destSeqNum = static_cast<int>(static_cast<unsigned int>(aodvPacket[8])<<(8*3) 
+                  unsigned int destSeqNum = static_cast<unsigned int>(static_cast<unsigned int>(aodvPacket[8])<<(8*3) 
                     | static_cast<unsigned int>(aodvPacket[9])<<(8*2) 
                     | static_cast<unsigned int>(aodvPacket[10])<<(8*1)
                     | static_cast<unsigned int>(aodvPacket[11]));
@@ -298,7 +331,7 @@ namespace gr {
                   bool noDeleteFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
                   unsigned char destCnt = aodvPacket[3];
                   std::vector<unsigned int> unreachableDestIp(destCnt);
-                  std::vector<int> unreachableSeqNum(destCnt);
+                  std::vector<unsigned int> unreachableSeqNum(destCnt);
                   int i=0;
                   int j=4;
                   while(i < destCnt)
@@ -307,7 +340,7 @@ namespace gr {
                       | static_cast<unsigned int>(aodvPacket[j+1])<<(8*2) 
                       | static_cast<unsigned int>(aodvPacket[j+2])<<(8*1)
                       | static_cast<unsigned int>(aodvPacket[j+3]);
-                    unreachableSeqNum[i] = static_cast<int>(static_cast<unsigned int>(aodvPacket[j+4])<<(8*3) 
+                    unreachableSeqNum[i] = static_cast<unsigned int>(static_cast<unsigned int>(aodvPacket[j+4])<<(8*3) 
                       | static_cast<unsigned int>(aodvPacket[j+5])<<(8*2) 
                       | static_cast<unsigned int>(aodvPacket[j+6])<<(8*1)
                       | static_cast<unsigned int>(aodvPacket[j+7]));
@@ -360,7 +393,6 @@ namespace gr {
       for(int i=0; i < txBuffer.size(); i++)
       {
         top = txBuffer.front();
-        //txBuffer.erase(txBuffer.begin());
         pmt::pmt_t meta(pmt::car(top)); // Get msg metadata
         pmt::pmt_t vect(pmt::cdr(top)); // Get msg data
         std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect);          
@@ -369,6 +401,7 @@ namespace gr {
           | static_cast<unsigned int>(ipPacket[18])<<8 
           | static_cast<unsigned int>(ipPacket[19]);
         //Check for loopback
+        // TODO: Add filter loopback control in the future
         if(destIp == HOST_IP)
         {
           message_port_pub(pmt::mp("to_host"), top);
@@ -395,36 +428,46 @@ namespace gr {
               {
                 if(rTbl[j].lifetime > std::chrono::system_clock::now()) // Route is fresh
                 {
+                  // Reset route lifetime
                   rTbl[j].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                  // Reset reverse route lifetime
+                  for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
+                  {
+                    // Check rtbl[k] to see if its destination matches any
+                    // nodes in the precursors list of current active route
+                    for(int l=0; l<rTbl[j].precursors.size(); l++) 
+                    {
+                      // If match found reset the lifetime of that reverse route
+                      if(rTbl[k].destIp==rTbl[j].precursors[l])
+                        rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                    }
+                  }
+                  // Send message
                   message_port_pub(pmt::mp("to_mac"), top);
+                  // Delete message from queue
                   txBuffer.erase(txBuffer.begin());
                 }
-                else if(rTbl[j].lifetime - std::chrono::system_clock::now() > DELETE_PERIOD)
+                else if(rTbl[j].lifetime - std::chrono::system_clock::now() > DELETE_PERIOD) // Route is older than delete period
                 {
                   rTbl.erase(rTbl.begin()+j); // Erase old route
-                  newRoute(destIp);
+                  newRoute(destIp); // Start new route procedure
                 }
                 else // Route has expired, but is not old enough to delete
                 {
+                  // Set status to invalid
+                  rTbl[j].valid=false;
                   if(ROUTE_REPAIR)
                   {
                     // TODO: Route repair procedure 
                   }
-                  else // TODO: Send RERR to precursers list 
+                  else // Send RERR to precursers list 
                   {
-                    //Unicast or Broadcast?
-                      //Unicast -> what if reverse routes are also invalid
-                      //Broadcast -> What if it's delivered to wrong node?
-                    // Set status to invalid
-                    rTbl[j].valid=false;
-                    // Send RERR to precursers list
-                    // Unicast to each node
-                    //for(int l=0; l<rTbl[j].precursors.size(); l++)
-                    //{
-                    //  std::vector<unsigned char> pkt = 
-                    //}
-                    // Invalid route procedure
-                    routeInvalid(j, destIp);
+                    // Unicast Route Error to every route in precursors list
+                    for( int k = 0; rTbl[j].precursors.size(); k++)
+                    {
+                      sendRERR(rTbl[j].precursors[k], destIp);
+                    }
+                    routeInvalid(j, destIp); // Invalid route procedure
                   }
                 }
               }
@@ -663,7 +706,7 @@ namespace gr {
           J, 
           R, 
           GRATUITOUS_RREP, 
-          DESTINATION_ONLY, 
+          DEST_ONLY, 
           U,
           destSeqNum,
           HOST_IP,
@@ -680,6 +723,32 @@ namespace gr {
       message_port_pub(pmt::mp("to_mac"), msg_out);
       return;
     }
+    
+    void route_impl::sendRERR(unsigned int destIp, unsigned int unreachableIp, bool N)
+    {
+      std::vector<std::vector<unsigned int>> list;
+      std::vector<unsigned int> pair; 
+      pair.push_back(destIp);
+      pair.push_back(unreachableIp);
+      list.push_back(pair);
+      // Build RERR
+      std::vector<unsigned char> rerr = makeRERRPkt(list, N);
+      // Build IPv4 packet
+      std::vector<uint8_t> pkt = makeIP4Pkt(HOST_IP,destIp,TTL_MAX);
+      // Build UDP packet
+      std::vector<uint8_t> udp = makeUDPPkt();
+      // Assemble packet
+      pkt.insert(pkt.end(), udp.begin(), udp.end());
+      pkt.insert(pkt.end(), rerr.begin(), rerr.end());
+      pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);
+      pmt::pmt_t meta = pmt::make_dict();
+      meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(destIp & 0x000000FF))); // Set dest ID
+      meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+      pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+      message_port_pub(pmt::mp("to_mac"), msg_out);
+      return;
+    }
+    
     void route_impl::newRoute(unsigned int destIp)
     {
       // Make a new routing table entry
@@ -702,6 +771,28 @@ namespace gr {
       rreqTbl.push_back(rreqEntry);
       sendRREQ(destIp, TTL_START, false, false, true, 0);
       return;
+    }
+    
+    std::vector<unsigned char> makeRERRPkt(std::vector<std::vector<unsigned int>> pair, bool N)
+    {
+      std::vector<unsigned char> pkt;
+      pkt[0] = 3;
+      pkt[1] = static_cast<unsigned char>(N)<<7;
+      pkt[2] = 0;
+      pkt[3] = static_cast<unsigned char>(pair.size());
+      for(int i=0; i<pair.size(); i++)
+      {
+        // Unreachable dest IP (i)
+        pkt[(i*8)+4] = static_cast<unsigned char>((pair[i][0] & 0xFF000000)>>(3*8));
+        pkt[(i*8)+5] = static_cast<unsigned char>((pair[i][0] & 0x00FF0000)>>(2*8));
+        pkt[(i*8)+6] = static_cast<unsigned char>((pair[i][0] & 0x0000FF00)>>(8));
+        pkt[(i*8)+7] = static_cast<unsigned char>((pair[i][0] & 0x000000FF));
+        // Unreachable dest Sequence Number (i)
+        pkt[(i*8)+8] = static_cast<unsigned char>((pair[i][1] & 0xFF000000)>>(3*8));
+        pkt[(i*8)+9] = static_cast<unsigned char>((pair[i][1] & 0x00FF0000)>>(2*8));
+        pkt[(i*8)+10] = static_cast<unsigned char>((pair[i][1] & 0x0000FF00)>>(8));
+        pkt[(i*8)+11] = static_cast<unsigned char>((pair[i][1] & 0x000000FF));
+      }
     }
   } /* namespace MST */
 } /* namespace gr */
