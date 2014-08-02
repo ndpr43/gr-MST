@@ -14,7 +14,7 @@ struct rTblEntry
   bool beingRepaired;
   //unsigned char nic;
   unsigned char hopCnt;
-  unsigned int nxtHop; // MAC Address
+  unsigned char nxtHop; // MAC Address
   std::vector<unsigned int> precursors;
   std::chrono::time_point<std::chrono::system_clock> lifetime; // in msec
 };

@@ -73,9 +73,23 @@ namespace gr {
       unsigned short ip4_checksum(std::vector<unsigned char> &ipPkt);
       void decTTL(std::vector<unsigned char> &ipPacket);
       void routeInvalid(int j/*rTbl Index*/, unsigned int destIp);
+      void addRoute(unsigned int destIp,
+               unsigned int srcIp,
+               unsigned int destSeqNum,
+               bool validDestSeq,
+               bool valid,
+               bool repairable,
+               bool beingRepaired,
+               unsigned char hopCnt,
+               unsigned char nxtHop);
       void newRoute(unsigned int destIp);
-      void sendRERR(unsigned int destIp, unsigned int unreachableIp, bool N = false);
+      void forward(std::vector<unsigned char> pkt, unsigned int destIp, unsigned char nxtHop);
+      void sendRERR(unsigned int destIp, unsigned int unreachableIp, unsigned char nxtHop, bool N = false);
       void sendRREQ(unsigned int destIp, unsigned char ttl, bool J, bool R, bool U, unsigned int destSeqNum );
+      void void sendRREP(bool repair, 
+                         unsigned int destIp,  
+                         unsigned int origIp,
+                         unsigned char hopCnt);
       std::vector<unsigned char> makeIP4Pkt(unsigned int sourceIp=0,
                                             unsigned int destIp=0,
                                             unsigned int ttl=64,
@@ -94,6 +108,7 @@ namespace gr {
                                              unsigned short destPort=654,
                                              unsigned short length=8+24,
                                              unsigned short checksum=0);
+      
       std::vector<unsigned char> makeRREQPkt (unsigned int rreqId, 
                                               unsigned int destIp,
                                                       bool J=false,
@@ -105,6 +120,14 @@ namespace gr {
                                               unsigned int origIp=0,
                                               unsigned int origSeqNum=0);
       std::vector<unsigned char> makeRERRPkt(std::vector<std::vector<unsigned int>> pair, bool N=false);
+      std::vector<unsigned char> makeRREPPkt(bool repair, 
+                                             bool ack, 
+                                             unsigned char prefixSz, 
+                                             unsigned char hopCnt, 
+                                             unsigned int destIp, 
+                                             unsigned int destSeqNum, 
+                                             unsigned int origIp, 
+                                             unsigned int lifetime);
       
 
      public:
