@@ -250,8 +250,41 @@ namespace gr {
                       | static_cast<unsigned int>(aodvPacket[22])<<(8*1) 
                       | static_cast<unsigned int>(aodvPacket[23]));
                     
+                    // Have we seen this rreq before?
+                    // If (no)
+                      // Make an rreq entry
+                      // Update reverse route
                     // Is it me?
-                    if(destIp == HOST_IP)
+                      // Update HOST SEQ NUM
+                      // Send RREP to source
+                    // else not me
+                      // If(D)
+                        // Forward
+                      // else
+                        // Do I have a route?
+                          // Update forward route
+                          // If(G)
+                            // Send RREP to dest
+                          // Send RREP to source
+                        // else
+                          // Forward   
+                    
+                    // Check to see if we've forwarded this rreq before
+                    int i=0;
+                    bool reqFound = false;
+                    while( i<rreqTbl.size() && !reqFound)
+                    {
+                      // If src IP and rreq ID match
+                      if(rreqTbl[i].srcIp==srcIp && rreqTbl[i].rreqId==rreqId && rreqTbl[i].destSeqNum==destSeqNum) 
+                        reqFound = true;
+                      else
+                        i++;
+                    }
+                    if(reqFound)
+                    {
+                      // Do nothing. We've forwarded this rreq before
+                    }
+                    else // Haven't seen it before
                     {
                       // Make/Update reverse route
                       addRoute(origIp,// rev route
@@ -263,60 +296,67 @@ namespace gr {
                                false,
                                hopCnt+1,
                                srcMac);
-                      // Update my Seq Number
-                      if(destSeqNum > HOST_SEQ_NUM)
-                        HOST_SEQ_NUM++;
-                      // Send rrep
-                      void sendRREP(repairFlag, destIp, origIp, 0);
-                    }
-                    else // Not me
-                    {                   
-                      // Check to see if we've forwarded or answered  this rreq before
-                      int i=0
-                      bool reqFound = false
-                      while( i<rreqTbl.size() && !reqFound)
+                      // Is it me?
+                      if(destIp == HOST_IP)
                       {
-                        // If src IP and rreq ID match
-                        if(rreqTbl[i].srcIp==srcIp  && rreqTbl[i].rreqId==rreqId) 
-                          reqFound = true;
-                        else
-                          i++;
+                        // Update my Seq Number
+                        if(destSeqNum > HOST_SEQ_NUM)
+                          HOST_SEQ_NUM++;
+                        // Send rrep
+                        sendRREP(repairFlag, destIp, origIp, 0);
                       }
-                      if(reqFound)
+                      else if(!destOnlyFlag)
                       {
-                        // Do nothing. We've forwarded this rreq before
-                      }
-                      else // We don't have an rreq table entry
-                      {
-                        // Refresh or create reverse path
-                        addRoute(srcIp,// rev route
-                                 destIp,// rev route
-                                 origSeqNum,// rev route
-                                 false, // Spec
-                                 true,
-                                 false,
-                                 false,
-                                 hopCnt+1,
-                                 srcMac);
-                        if(destOnlyFlag)
+                        int j=0;
+                        bool found = false;
+                        while (!found && j<rTbl.size())
                         {
+                          if(destIp==rTbl[j].destIp)
+                            found = true
+                          else
+                            j++;
+                        }
+                        if(found)
+                        {
+                          if(gratuitousRREPFlag)
+                          {
+                            // Send rrep to destination
+                            // need to rework the send rrep function to make 
+                            // this possible
+                          }
+                          // Send rrep
+                          sendRREP(repairFlag, destIp, origIp, rTbl[j].hopCnt);
+                        }
+                        else // Not found
+                        {
+                          // Forward
                           // We're sending the original packet
                           // There's no reason to reconstruct it
-                          ipPacket[8]--; // Decrement TTL
+                          decTTL(ipPacket);
                           ipPacket[31]++; // Increment Hop Count
-                          forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
-                        }
-                        else if(gratuitousRREPFlag)
-                        {
-                          //send rrep to originator ip
-                          //send rrep to destip
-                        }
-                        else
-                        {
-                          //Send rrep to originator ip
+                          //forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
+                          pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);     
+                          meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(255)));
+                          meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
+                          pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+                          message_port_pub(pmt::mp("to_mac"), msg_out);
                         }
                       }
-                    }
+                      else // Forward
+                      {
+                        // Forward
+                        // We're sending the original packet
+                        // There's no reason to reconstruct it
+                        decTTL(ipPacket);
+                        ipPacket[31]++; // Increment Hop Count
+                        //forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
+                        pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);     
+                        meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(255)));
+                        meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
+                        pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+                        message_port_pub(pmt::mp("to_mac"), msg_out);
+                      }  
+    
                     break;
                   }
                   case 2: // TODO: RREP
@@ -634,10 +674,11 @@ namespace gr {
     
     void forward(std::vector<unsigned char> pkt, unsigned int destIp, unsigned char nxtHop)
     {
+      pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);
+      pmt::pmt_t meta = pmt::make_dict();      
       meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(nxtHop))); // Set dest ID
-      meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-                                
-      pmt::pmt_t msg_out = pmt::cons(meta, vect);
+      meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
+      pmt::pmt_t msg_out = pmt::cons(meta, outVect);
       message_port_pub(pmt::mp("to_mac"), msg_out);
     }
     

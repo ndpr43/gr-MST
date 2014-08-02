@@ -83,7 +83,7 @@ namespace gr {
                unsigned char hopCnt,
                unsigned char nxtHop);
       void newRoute(unsigned int destIp);
-      void forward(std::vector<unsigned char> pkt, unsigned int destIp, unsigned char nxtHop);
+      void forward(std::vector<unsigned char> pkt, unsigned int destIp, unsigned char nxtHop);//Use for broadcasts
       void sendRERR(unsigned int destIp, unsigned int unreachableIp, unsigned char nxtHop, bool N = false);
       void sendRREQ(unsigned int destIp, unsigned char ttl, bool J, bool R, bool U, unsigned int destSeqNum );
       void void sendRREP(bool repair, 
