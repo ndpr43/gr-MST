@@ -275,7 +275,7 @@ namespace gr {
                     while( i<rreqTbl.size() && !reqFound)
                     {
                       // If src IP and rreq ID match
-                      if(rreqTbl[i].srcIp==srcIp && rreqTbl[i].rreqId==rreqId && rreqTbl[i].destSeqNum==destSeqNum) 
+                      if(rreqTbl[i].srcIp==srcIp && rreqTbl[i].rreqId==rreqId && rreqTbl[i].destSeqNum==destSeqNum)
                         reqFound = true;
                       else
                         i++;
@@ -286,6 +286,9 @@ namespace gr {
                     }
                     else // Haven't seen it before
                     {
+                      // Make an rreq entry
+                      rreqTblEntry entry = {destIp; rreqId; srcIp; ttl; 0; std::chrono::system_clock::now() + PATH_DISCOVER_TIME; PATH_DISCOVER_TIME, routeRepairFlag};
+                      rreqTbl.push_back(entry);
                       // Make/Update reverse route
                       addRoute(origIp,// rev route
                                HOST_IP,// rev route
@@ -318,6 +321,8 @@ namespace gr {
                         }
                         if(found)
                         {
+                          // Update forward route
+                          rTbl[j].lifetime = std::chrono
                           if(gratuitousRREPFlag)
                           {
                             // Send rrep to destination
@@ -924,13 +929,15 @@ namespace gr {
       // Find  route
       while(i<rTbl.size() && !found)
       {
-        if(rTbl[i].destIp==origIp)
+        if(rTbl[i].destIp==origIp) // May need verification
           found = true;
         else
           i++;
       }
       if(found)
       {
+        // Refresh route lifetime
+        rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
         // Build RREP
         std::vector<unsigned char> rrep = makeRREPPkt(repair,ROUTE_ACK,hopCnt,HOST_IP,HOST_SEQ_NUM,origIp,static_cast<unsigned int>(ACTIVE_ROUTE_TIMEOUT));
         // Build IPv4 packet
