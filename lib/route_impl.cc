@@ -554,7 +554,94 @@ namespace gr {
             }
             else // TODO: Data Packet
             { 
-              // AODV Forwarding logic here
+              unsigned int destIpAddr = static_cast<unsigned int>(ipPacket[16])<<(3*8) |
+                  static_cast<unsigned int>(ipPacket[17])<<(2*8) |
+                  static_cast<unsigned int>(ipPacket[18])<<(8) |
+                  static_cast<unsigned int>(ipPacket[19]);
+              
+              bool found = false;
+              int i=0;
+              // Search for route
+              while(!found && i<rTbl.size())
+              {
+                if(rTbl[i].destIp == destIpAddr)
+                {
+                  found = true;
+                }
+                else
+                {
+                  i++;
+                }
+              }
+                           
+              if(found)
+              {
+                if(rTbl[i].valid) // if(Route is Valid)
+                {
+                  if(rTbl[i].lifetime > std::chrono::system_clock::now()) // Route is fresh
+                  {
+                    // Reset route lifetime
+                    rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                    // Reset reverse route lifetime
+                    for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
+                    {
+                      // Check rtbl[k] to see if its destination matches any
+                      // nodes in the precursors list of current active route
+                      for(int l=0; l<rTbl[i].precursors.size(); l++)  // TODO: only refresh the precursor we recieved from
+                      {
+                        // If match found reset the lifetime of that reverse route
+                        if(rTbl[k].destIp==rTbl[i].precursors[l])
+                          rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                      }
+                    }
+                    // Send message
+                    decTTL(ipPacket);
+                    pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
+                    meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(rTbl[i].nxtHop))); // Set dest ID
+                    meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+                    pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+                    message_port_pub(pmt::mp("to_mac"), msg_out);
+                  }
+                  else // Route has expired, but is not old enough to delete
+                  {
+                    // Set status to invalid
+                    rTbl[i].valid=false;
+                    if(ROUTE_REPAIR)
+                    {
+                      // TODO: Route repair procedure 
+                    }
+                    else // Send RERR to precursers list 
+                    {
+                      // Unicast Route Error to every route in precursors list
+                      for( int k = 0; rTbl[i].precursors.size(); k++)
+                      {
+                        sendRERR(rTbl[i].precursors[k], destIpAddr, rTbl[i].nxtHop);
+                      }
+                    }
+                    if(std::chrono::system_clock::now() - rTbl[i].lifetime > DELETE_PERIOD) // Route is older than delete period
+                      rTbl.erase(rTbl.begin()+i); // Erase old route
+                  }
+                }
+                else // Route invalid
+                {                
+                  // Set status to invalid
+                  rTbl[i].valid=false;
+                  if(ROUTE_REPAIR)
+                  {
+                    // TODO: Route repair procedure 
+                  }
+                  else // Send RERR to precursers list 
+                  {
+                    // Unicast Route Error to every route in precursors list
+                    for( int k = 0; rTbl[i].precursors.size(); k++)
+                    {
+                      sendRERR(rTbl[i].precursors[k], destIpAddr, rTbl[i].nxtHop);
+                    }
+                  }
+                  if(std::chrono::system_clock::now() - rTbl[i].lifetime > DELETE_PERIOD) // Route is older than delete period
+                    rTbl.erase(rTbl.begin()+i); // Erase old route
+                }
+              }
             }
           }
         }
@@ -624,6 +711,7 @@ namespace gr {
                     }
                   }
                   // Send message
+                  
                   meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(rTbl[j].nxtHop&0x000000FF))); // Set dest ID
                   meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
                   pmt::pmt_t msg_out = pmt::cons(meta, vect);
@@ -632,7 +720,7 @@ namespace gr {
                   // Delete message from queue
                   txBuffer.erase(txBuffer.begin());
                 }
-                else if(rTbl[j].lifetime - std::chrono::system_clock::now() > DELETE_PERIOD) // Route is older than delete period
+                else if(std::chrono::system_clock::now() - rTbl[j].lifetime  > DELETE_PERIOD) // Route is older than delete period
                 {
                   rTbl.erase(rTbl.begin()+j); // Erase old route
                   newRoute(destIp); // Start new route procedure
