@@ -889,16 +889,16 @@ namespace gr {
         // Refresh the route lifetime
         rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
         // Update the reverse Sequence number
-        if(destSeqNum > Tbl[i].destSeqNum)
+        if(destSeqNum > rTbl[i].destSeqNum)
         {
           rTbl[i].destSeqNum = destSeqNum;
           rTbl[i].hopCnt = hopCnt;
           rTbl[i].nxtHop = nxtHop;
         }
-        else if(destSeqNum == Tbl[i].destSeqNum && hopCnt < Tbl[i].hopCnt)// Update the hop count
+        else if(destSeqNum == rTbl[i].destSeqNum && hopCnt < Tbl[i].hopCnt)// Update the hop count
         {
           rTbl[i].hopCnt = hopCnt;
-          rTbl[i].destSeqNum = origSeqNum;
+          rTbl[i].destSeqNum = destSeqNum;
           rTbl[i].nxtHop = nxtHop;
         }
         else
