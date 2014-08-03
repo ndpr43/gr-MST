@@ -88,6 +88,7 @@ namespace gr {
       this-> HOST_IP;
       if(routing=="AODV")
       {
+        HOST_IP = 0xC0A80001;
         ROUTE_REPAIR = repair;
         ROUTE_ACK = ack;
         DEST_ONLY = destOnly;
@@ -820,7 +821,7 @@ namespace gr {
       return;
     }
           
-    std::vector<unsigned char> makeUDPPkt (unsigned short srcPort,
+    std::vector<unsigned char> route_impl::makeUDPPkt (unsigned short srcPort,
                                            unsigned short destPort,
                                            unsigned short length,
                                            unsigned short checksum)
@@ -1208,7 +1209,7 @@ namespace gr {
       }
     }
     
-    std::vector<unsigned char> makeRERRPkt(std::vector<std::vector<unsigned int>> pair, bool N)
+    std::vector<unsigned char> route_impl::makeRERRPkt(std::vector<std::vector<unsigned int>> pair, bool N)
     {
       std::vector<unsigned char> pkt (1+8*pair.size());
       pkt[0] = 3;
@@ -1230,7 +1231,7 @@ namespace gr {
       }
     }
     
-    std::vector<unsigned char> makeRREPPkt(bool repair, 
+    std::vector<unsigned char> route_impl::makeRREPPkt(bool repair, 
                                            bool ack, 
                                            unsigned char prefixSz, 
                                            unsigned char hopCnt, 

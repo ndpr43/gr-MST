@@ -101,6 +101,12 @@
 	  <type>int</type>
   </param>
   <param>
+	  <name>TTL Increment</name>
+	  <key>ttlIncrement</key>
+	  <value>1</value>
+	  <type>int</type>
+  </param>
+  <param>
 	  <name>Maximum TTL</name>
 	  <key>ttlMax</key>
 	  <value>255</value>
