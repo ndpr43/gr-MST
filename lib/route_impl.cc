@@ -148,14 +148,15 @@ namespace gr {
       {
         if (pmt::is_null(vect) && pmt::dict_has_key(meta, pmt::mp("EM_UNREACHABLE_DEST_ADDR"))) // Link failure notification from mac layer
         {
+          unsigned char unreachableDest;
           pmt::pmt_t deadNode = pmt::dict_ref ( meta, pmt::mp("EM_UNREACHABLE_DEST_ADDR"), pmt::PMT_NIL );
           if(pmt::is_symbol(deadNode))
           {
-            unsigned char unreachableDest = static_cast<unsigned char>(std::stoi(pmt::symbol_to_string(deadNode)));
+            unreachableDest = static_cast<unsigned char>(std::stoi(pmt::symbol_to_string(deadNode)));
           }
           else if(pmt::is_number(deadNode))
           {
-            unsigned char unreachableDest = static_cast<unsigned char>(pmt::to_long(deadNode));
+            unreachableDest = static_cast<unsigned char>(pmt::to_long(deadNode));
           }
           
           //unsigned int destIp = (unreachableDest & 0x000000FF) | (HOST_IP & 0xFFFFFF00) // Kludge assumes 255.255.255.0 Subnet mask
@@ -185,7 +186,7 @@ namespace gr {
                     // If the reverse route for the affected precursor is found send RERR
                     if(rTbl[k].destIp == rTbl[i].precursors[j] && rTbl[k].valid)
                     {
-                      void sendRERR(rTbl[i].precursors[j], rTbl[i].destIp, rTbl[k].nxtHop);
+                      sendRERR(rTbl[i].precursors[j], rTbl[i].destIp, rTbl[k].nxtHop);
                     }
                   }
                 }
@@ -229,7 +230,7 @@ namespace gr {
                     bool destOnlyFlag = static_cast<bool>(aodvPacket[2] & (1<<4));
                     bool unkownSeqNum = static_cast<bool>(aodvPacket[2] & (1<<3));
                     unsigned char hopCnt = aodvPacket[3];
-                    int rreqId = static_cast<unsigned int>(aodvPacket[4])<<(8*3) 
+                    unsigned int rreqId = static_cast<unsigned int>(aodvPacket[4])<<(8*3) 
                       | static_cast<unsigned int>(aodvPacket[5])<<(8*2) 
                       | static_cast<unsigned int>(aodvPacket[6])<<(8*1)
                       | static_cast<unsigned int>(aodvPacket[7]);
@@ -275,7 +276,7 @@ namespace gr {
                     while( i<rreqTbl.size() && !reqFound)
                     {
                       // If src IP and rreq ID match
-                      if(rreqTbl[i].srcIp==srcIp && rreqTbl[i].rreqId==rreqId && rreqTbl[i].destSeqNum==destSeqNum)
+                      if(rreqTbl[i].srcIp==srcIp && rreqTbl[i].rreqId==rreqId)
                         reqFound = true;
                       else
                         i++;
@@ -287,7 +288,7 @@ namespace gr {
                     else // Haven't seen it before
                     {
                       // Make an rreq entry
-                      rreqTblEntry entry = {destIp; rreqId; srcIp; ttl; 0; std::chrono::system_clock::now() + PATH_DISCOVER_TIME; PATH_DISCOVER_TIME, routeRepairFlag};
+                      rreqTblEntry entry = {destIp, rreqId, srcIp, ttl, 0, std::chrono::system_clock::now() + PATH_DISCOVER_TIME, PATH_DISCOVER_TIME, repairFlag};
                       rreqTbl.push_back(entry);
                       // Make/Update reverse route
                       addRoute(origIp,// rev route
@@ -303,8 +304,8 @@ namespace gr {
                       if(destIp == HOST_IP)
                       {
                         // Update my Seq Number
-                        if(destSeqNum > HOST_SEQ_NUM)
-                          HOST_SEQ_NUM++;
+                        if(destSeqNum > hostSeqNum)
+                          hostSeqNum++;
                         // Send rrep
                         sendRREP(repairFlag, destIp, origIp, 0);
                       }
@@ -314,20 +315,36 @@ namespace gr {
                         bool found = false;
                         while (!found && j<rTbl.size())
                         {
-                          if(destIp==rTbl[j].destIp)
-                            found = true
+                          if(destIp==rTbl[j].destIp && rTbl[j].valid==true)
+                            found = true;
                           else
                             j++;
                         }
                         if(found)
                         {
+                          // Update my dest Seq Number
+                          if(destSeqNum > rTbl[j].destSeqNum)
+                            rTbl[j].destSeqNum++;
                           // Update forward route
-                          rTbl[j].lifetime = std::chrono
+                          rTbl[j].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                          // Add node to precusors list
+                          int k=0;
+                          found = false;
+                          // Ensure src node is not already on the list
+                          while(!found && k<rTbl[j].precursors.size())
+                          {
+                            if(rTbl[j].precursors[k]==srcIp)
+                              found = true;
+                            else
+                              k++;
+                          }
+                          if(!found)
+                            rTbl[j].precursors.push_back(srcIp);
+                          
                           if(gratuitousRREPFlag)
                           {
                             // Send rrep to destination
-                            // need to rework the send rrep function to make 
-                            // this possible
+                            sendGRREP(repairFlag, destIp, origIp, rTbl[j].hopCnt);
                           }
                           // Send rrep
                           sendRREP(repairFlag, destIp, origIp, rTbl[j].hopCnt);
@@ -360,8 +377,8 @@ namespace gr {
                         meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
                         pmt::pmt_t msg_out = pmt::cons(meta, outVect);
                         message_port_pub(pmt::mp("to_mac"), msg_out);
-                      }  
-    
+                      }
+                    }
                     break;
                   }
                   case 2: // TODO: RREP
@@ -942,6 +959,51 @@ namespace gr {
         std::vector<unsigned char> rrep = makeRREPPkt(repair,ROUTE_ACK,hopCnt,HOST_IP,HOST_SEQ_NUM,origIp,static_cast<unsigned int>(ACTIVE_ROUTE_TIMEOUT));
         // Build IPv4 packet
         std::vector<uint8_t> pkt = makeIP4Pkt(HOST_IP,origIp,TTL_MAX);
+        // Build UDP packet
+        std::vector<uint8_t> udp = makeUDPPkt();
+        // Assemble packet
+        pkt.insert(pkt.end(), udp.begin(), udp.end());
+        pkt.insert(pkt.end(), rrep.begin(), rrep.end());
+        pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);
+        pmt::pmt_t meta = pmt::make_dict();
+        meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(rTbl[i].nxtHop))); // Set dest ID
+        meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+        pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+        message_port_pub(pmt::mp("to_mac"), msg_out);
+      }
+    }
+    
+    void sendGRREP(unsigned int destIp, unsigned char ttl, bool J, bool R, bool U, unsigned int destSeqNum )
+    {
+      int i=0;
+      int j=0;
+      bool found = false;
+      // Find  route to destination
+      while(i<rTbl.size() && !found)
+      {
+        if(rTbl[i].destIp==destIp)
+          found = true;
+        else
+          i++;
+      }
+      // Find route to source
+      found = false;
+      while(j<rTbl.size() && !found)
+      {
+        if(rTbl[j].destIp==origIp)
+          found = true;
+        else
+          j++;
+      }
+      
+      if(found)
+      {
+        // Refresh route lifetime
+        rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+        // Build RREP
+        std::vector<unsigned char> rrep = makeRREPPkt(R,ROUTE_ACK,0,rTbl[j].hopCnt,destIp,rTbl[i].destSeqNum,origIp,static_cast<unsigned int>(ACTIVE_ROUTE_TIMEOUT));
+        // Build IPv4 packet
+        std::vector<uint8_t> pkt = makeIP4Pkt(HOST_IP,destIp,TTL_MAX);
         // Build UDP packet
         std::vector<uint8_t> udp = makeUDPPkt();
         // Assemble packet
