@@ -403,6 +403,107 @@ namespace gr {
                       | static_cast<unsigned int>(aodvPacket[9])<<(8*2)
                       | static_cast<unsigned int>(aodvPacket[10])<<(8*1)
                       | static_cast<unsigned int>(aodvPacket[11]));
+
+
+		    // Search RREQ route table and delete the serviced entry corresponding to RREP
+		    int i = 0;
+		    bool rreq_found = false;
+                    while( i<rreqTbl.size() && !rreq_found)
+                    {
+                      // If src IP and dest IP match. Here sequence number is not considered
+                      if((rreqTbl[i].srcIp == srcIp) && (rreqTbl[i].destIp == destIp))
+                        rreq_found = true;
+                      else
+                        i++;
+                    }
+		    
+		    if(rreq_found == true)
+		    {
+		      rreqTbl.erase(rreqTbl.begin + i);
+		    }
+		    else
+		    {
+		      cout << "ERROR: Received RREP with Source & Destination IP not matching RREQ entries";
+		    }
+
+		    // Search and retrieve Reverse route 
+		    i = 0;
+		    bool revroute_found = false;
+		    unsigned char next_hop;
+		    while( i < rTbl.size() && !revroute_found )
+		    {
+		      if((rTbl[i].destIp == origIp))
+		      {
+		        rTbl[i].validDestSeq = true;
+			rTbl[i].precursors.push(destIp);
+			next_hop = rTbl[i].nxtHop;
+			revroute_found = true;
+		      }
+		      else
+		      {
+		       i++;
+		      }
+		    }
+
+
+		    // If repair flag is set 
+		    if (repairFlag)
+		    {
+		      // To be done
+		    }
+		    else
+		    {
+		      // If me being the source node of RREQ for which RREP was received.
+		      if (origIp == HOST_IP)
+		      {
+		        if(ackFlag)
+			{
+			  // Send RACK
+			}
+			else
+			{
+			  // Do not send RACK
+			}
+
+			// Add forward Route entry
+                        addRoute(destIp,
+                                 HOST_IP,      // <------------------
+                                 destSeqNum,
+                                 true, 
+                                 true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
+                                 false,
+                                 false,
+                                 hopCnt+1,
+                                 srcMac);
+		      }
+		      else
+		      {
+		         // Adding forward Route entry
+                         addRoute(destIp,
+                                  srcIp,        // <------------------
+                                  destSeqNum,
+                                  true, 
+                                  true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
+                                  false,
+                                  false,
+                                  hopCnt+1,
+                                  srcMac);
+
+	                // Forwarding the RREP
+                        decTTL(ipPacket);
+                        ipPacket[31]++; // Increment Hop Count
+                        pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);     
+                        meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(next_hop)));
+                        meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
+                        pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+                        message_port_pub(pmt::mp("to_mac"), msg_out);
+		    
+			 
+		      }
+		    }
+
+
+
                     // TODO: route the packet
                     // 
                     //
@@ -911,16 +1012,16 @@ namespace gr {
         // Refresh the route lifetime
         rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
         // Update the reverse Sequence number
-        if(destSeqNum > Tbl[i].destSeqNum)
+        if(destSeqNum > rTbl[i].destSeqNum)
         {
           rTbl[i].destSeqNum = destSeqNum;
           rTbl[i].hopCnt = hopCnt;
           rTbl[i].nxtHop = nxtHop;
         }
-        else if(destSeqNum == Tbl[i].destSeqNum && hopCnt < Tbl[i].hopCnt)// Update the hop count
+        else if(destSeqNum == rTbl[i].destSeqNum && hopCnt < Tbl[i].hopCnt)// Update the hop count
         {
           rTbl[i].hopCnt = hopCnt;
-          rTbl[i].destSeqNum = origSeqNum;
+          rTbl[i].destSeqNum = destSeqNum;
           rTbl[i].nxtHop = nxtHop;
         }
         else
