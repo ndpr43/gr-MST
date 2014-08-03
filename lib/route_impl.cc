@@ -344,7 +344,10 @@ namespace gr {
                           if(gratuitousRREPFlag)
                           {
                             // Send rrep to destination
-                            sendGRREP(repairFlag, destIp, origIp, rTbl[j].hopCnt);
+                            sendGRREP(repairFlag, 
+                                destIp,  
+                                origIp,
+                                hopCnt);
                           }
                           // Send rrep
                           sendRREP(repairFlag, destIp, origIp, rTbl[j].hopCnt);
@@ -357,7 +360,7 @@ namespace gr {
                           decTTL(ipPacket);
                           ipPacket[31]++; // Increment Hop Count
                           //forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
-                          pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);     
+                          pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
                           meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(255)));
                           meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
                           pmt::pmt_t msg_out = pmt::cons(meta, outVect);
@@ -372,7 +375,7 @@ namespace gr {
                         decTTL(ipPacket);
                         ipPacket[31]++; // Increment Hop Count
                         //forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
-                        pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);     
+                        pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
                         meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(255)));
                         meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
                         pmt::pmt_t msg_out = pmt::cons(meta, outVect);
@@ -405,9 +408,9 @@ namespace gr {
                       | static_cast<unsigned int>(aodvPacket[11]));
 
 
-		    // Search RREQ route table and delete the serviced entry corresponding to RREP
-		    int i = 0;
-		    bool rreq_found = false;
+                    // Search RREQ route table and delete the serviced entry corresponding to RREP
+                    int i = 0;
+                    bool rreq_found = false;
                     while( i<rreqTbl.size() && !rreq_found)
                     {
                       // If src IP and dest IP match. Here sequence number is not considered
@@ -416,69 +419,69 @@ namespace gr {
                       else
                         i++;
                     }
-		    
-		    if(rreq_found == true)
-		    {
-		      rreqTbl.erase(rreqTbl.begin + i);
-		    }
-		    else
-		    {
-		      cout << "ERROR: Received RREP with Source & Destination IP not matching RREQ entries";
-		    }
-
-		    // Search and retrieve Reverse route 
-		    i = 0;
-		    bool revroute_found = false;
-		    unsigned char next_hop;
-		    while( i < rTbl.size() && !revroute_found )
-		    {
-		      if((rTbl[i].destIp == origIp))
-		      {
-		        rTbl[i].validDestSeq = true;
-			rTbl[i].precursors.push(destIp);
-			next_hop = rTbl[i].nxtHop;
-			revroute_found = true;
-		      }
-		      else
-		      {
-		       i++;
-		      }
-		    }
-
-
-		    // If repair flag is set 
-		    if (repairFlag)
-		    {
-		      // To be done
-		    }
-		    else
-		    {
-		      // If me being the source node of RREQ for which RREP was received.
-		      if (origIp == HOST_IP)
-		      {
-		        if(ackFlag)
-			{
-			  // Send RACK
-			}
-			else
-			{
-			  // Do not send RACK
-			}
-
-			// Add forward Route entry
+                    
+                    if(rreq_found == true)
+                    {
+                      rreqTbl.erase(rreqTbl.begin() + i);
+                    }
+                    else
+                    {
+                      std::cout << "ERROR: Received RREP with Source & Destination IP not matching RREQ entries";
+                    }
+            
+                    // Search and retrieve Reverse route 
+                    i = 0;
+                    bool revroute_found = false;
+                    unsigned char next_hop;
+                    while( i < rTbl.size() && !revroute_found )
+                    {
+                      if((rTbl[i].destIp == origIp))
+                      {
+                        rTbl[i].validDestSeq = true;
+                        rTbl[i].precursors.push_back(destIp);
+                        next_hop = rTbl[i].nxtHop;
+                        revroute_found = true;
+                      }
+                      else
+                      {
+                       i++;
+                      }
+                    }
+            
+            
+                    // If repair flag is set 
+                    if (repairFlag)
+                    {
+                      // To be done
+                    }
+                    else
+                    {
+                      // If me being the source node of RREQ for which RREP was received.
+                      if (origIp == HOST_IP)
+                      {
+                        if(ackFlag)
+                        {
+                          // Send RACK
+                        }
+                        else
+                        {
+                          // Do not send RACK
+                        }
+              
+                        // Add forward Route entry
                         addRoute(destIp,
-                                 HOST_IP,      // <------------------
-                                 destSeqNum,
-                                 true, 
-                                 true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
-                                 false,
-                                 false,
-                                 hopCnt+1,
-                                 srcMac);
-		      }
-		      else
-		      {
-		         // Adding forward Route entry
+                                   HOST_IP,      // <------------------
+                                   destSeqNum,
+                                   true, 
+                                   true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
+                                   false,
+                                   false,
+                                   hopCnt+1,
+                                   srcMac);
+                      }
+                      else
+                      {
+                         // Adding forward Route entry
                          addRoute(destIp,
                                   srcIp,        // <------------------
                                   destSeqNum,
@@ -489,24 +492,18 @@ namespace gr {
                                   hopCnt+1,
                                   srcMac);
 
-	                // Forwarding the RREP
+                         // Forwarding the RREP
                         decTTL(ipPacket);
                         ipPacket[31]++; // Increment Hop Count
-                        pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);     
+                        pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
                         meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(next_hop)));
                         meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
                         pmt::pmt_t msg_out = pmt::cons(meta, outVect);
                         message_port_pub(pmt::mp("to_mac"), msg_out);
 		    
 			 
-		      }
-		    }
-
-
-
-                    // TODO: route the packet
-                    // 
-                    //
+                      }
+                    }
                     break;
                   }
                   case 3: // TODO: RERR 
@@ -561,12 +558,12 @@ namespace gr {
             }
           }
         }
-        else // Default case with no routing
-        {
-          message_port_pub(pmt::mp("to_host"),msg);
-          //meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
-          //meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-        }
+      }
+      else // Default case with no routing
+      {
+        message_port_pub(pmt::mp("to_host"),msg);
+        //meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
+        //meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
       }
     }
     
@@ -653,7 +650,7 @@ namespace gr {
                     // Unicast Route Error to every route in precursors list
                     for( int k = 0; rTbl[j].precursors.size(); k++)
                     {
-                      sendRERR(rTbl[j].precursors[k], destIp);
+                      sendRERR(rTbl[j].precursors[k], destIp, rTbl[j].nxtHop);
                     }
                     routeInvalid(j, destIp); // Invalid route procedure
                   }
@@ -763,7 +760,7 @@ namespace gr {
                                                         unsigned int origIp,
                                                         unsigned int origSeqNum)
     {
-      std::vector<unsigned char>(6*4) pkt;
+      std::vector<unsigned char> pkt (6*4); 
       pkt[0]=1;
       pkt[1]= 0x00 | static_cast<unsigned char>(J)<<7 
           | static_cast<unsigned char>(R)<<6
@@ -773,7 +770,7 @@ namespace gr {
       pkt[2] = 0x00;
       pkt[3] = 0;
       pkt[4] = static_cast<unsigned char>((rreqId&0xFF000000)>>24);
-      pkt[5] = static_cast<unsigned char>((rreqId&0x00FF00000>>16);
+      pkt[5] = static_cast<unsigned char>((rreqId&0x00FF00000)>>16);
       pkt[6] = static_cast<unsigned char>((rreqId&0x0000FF00)>>8);
       pkt[7] = static_cast<unsigned char>(rreqId&0x000000FF);
       pkt[8] = static_cast<unsigned char>((destIp&0xFF000000)>>24);
@@ -795,7 +792,7 @@ namespace gr {
       return pkt;
     }
     
-    void forward(std::vector<unsigned char> pkt, unsigned int destIp, unsigned char nxtHop)
+    void route_impl::forward(std::vector<unsigned char> pkt, unsigned int destIp, unsigned char nxtHop)
     {
       pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);
       pmt::pmt_t meta = pmt::make_dict();      
@@ -803,6 +800,7 @@ namespace gr {
       meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
       pmt::pmt_t msg_out = pmt::cons(meta, outVect);
       message_port_pub(pmt::mp("to_mac"), msg_out);
+      return;
     }
     
     unsigned short route_impl::ip4_checksum(std::vector<unsigned char> &ipPacket)
@@ -987,7 +985,7 @@ namespace gr {
       while(i<rTbl.size() && !routeFound)
       {
         if(rTbl[i].destIp==destIp)
-          routefound = true;
+          routeFound = true;
         else
           i++;
       }
@@ -999,7 +997,7 @@ namespace gr {
           int j=0;
           bool found = false;
           // Search for srcIp;
-          while(j<rTbl.precursors.size() && !found)
+          while(j<rTbl[i].precursors.size() && !found)
           {
             if(rTbl[i].precursors[j]==srcIp)
               found = true;
@@ -1018,7 +1016,7 @@ namespace gr {
           rTbl[i].hopCnt = hopCnt;
           rTbl[i].nxtHop = nxtHop;
         }
-        else if(destSeqNum == rTbl[i].destSeqNum && hopCnt < Tbl[i].hopCnt)// Update the hop count
+        else if(destSeqNum == rTbl[i].destSeqNum && hopCnt < rTbl[i].hopCnt)// Update the hop count
         {
           rTbl[i].hopCnt = hopCnt;
           rTbl[i].destSeqNum = destSeqNum;
@@ -1033,11 +1031,11 @@ namespace gr {
       {
         std::vector<unsigned int> temp;
         rTblEntry revRoute = {destIp,destSeqNum,validDestSeq, valid, repairable, beingRepaired, hopCnt,nxtHop,temp,std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT};
-        rTbl.push_back(revRoute)
+        rTbl.push_back(revRoute);
       }
     }
     
-    void sendRREP(bool repair, 
+    void route_impl::sendRREP(bool repair, 
                   unsigned int destIp,  
                   unsigned int origIp,
                   unsigned char hopCnt)
@@ -1057,7 +1055,7 @@ namespace gr {
         // Refresh route lifetime
         rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
         // Build RREP
-        std::vector<unsigned char> rrep = makeRREPPkt(repair,ROUTE_ACK,hopCnt,HOST_IP,HOST_SEQ_NUM,origIp,static_cast<unsigned int>(ACTIVE_ROUTE_TIMEOUT));
+        std::vector<unsigned char> rrep = makeRREPPkt(repair,ROUTE_ACK,0,hopCnt,HOST_IP,hostSeqNum,origIp,ACTIVE_ROUTE_TIMEOUT.count());
         // Build IPv4 packet
         std::vector<uint8_t> pkt = makeIP4Pkt(HOST_IP,origIp,TTL_MAX);
         // Build UDP packet
@@ -1074,7 +1072,10 @@ namespace gr {
       }
     }
     
-    void sendGRREP(unsigned int destIp, unsigned char ttl, bool J, bool R, bool U, unsigned int destSeqNum )
+    void route_impl::sendGRREP(bool repair, 
+        unsigned int destIp,  
+        unsigned int origIp,
+        unsigned char hopCnt)
     {
       int i=0;
       int j=0;
@@ -1102,7 +1103,7 @@ namespace gr {
         // Refresh route lifetime
         rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
         // Build RREP
-        std::vector<unsigned char> rrep = makeRREPPkt(R,ROUTE_ACK,0,rTbl[j].hopCnt,destIp,rTbl[i].destSeqNum,origIp,static_cast<unsigned int>(ACTIVE_ROUTE_TIMEOUT));
+        std::vector<unsigned char> rrep = makeRREPPkt(repair,ROUTE_ACK,0,rTbl[j].hopCnt,destIp,rTbl[i].destSeqNum,origIp,ACTIVE_ROUTE_TIMEOUT.count());
         // Build IPv4 packet
         std::vector<uint8_t> pkt = makeIP4Pkt(HOST_IP,destIp,TTL_MAX);
         // Build UDP packet
@@ -1121,7 +1122,7 @@ namespace gr {
     
     std::vector<unsigned char> makeRERRPkt(std::vector<std::vector<unsigned int>> pair, bool N)
     {
-      std::vector<unsigned char>(1+8*pair.size()) pkt;
+      std::vector<unsigned char> pkt (1+8*pair.size());
       pkt[0] = 3;
       pkt[1] = static_cast<unsigned char>(N)<<7;
       pkt[2] = 0;
@@ -1150,7 +1151,7 @@ namespace gr {
                                            unsigned int origIp, 
                                            unsigned int lifetime)
     {
-      std::vector<unsigned char>(20) pkt;
+      std::vector<unsigned char> pkt (20);
       pkt[0] = 2;
       pkt[1] = static_cast<unsigned char>(repair)<<7 | static_cast<unsigned char>(ack)<<7;
       pkt[2] = prefixSz * 0x1F;
