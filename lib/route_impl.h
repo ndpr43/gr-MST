@@ -70,6 +70,7 @@ namespace gr {
       //Functions
       void rx_msg_mac(pmt::pmt_t msg);
       void rx_msg_host(pmt::pmt_t msg);
+      void rx_data_host();
       unsigned short ip4_checksum(std::vector<unsigned char> &ipPkt);
       void decTTL(std::vector<unsigned char> &ipPacket);
       void routeInvalid(int j/*rTbl Index*/, unsigned int destIp);
