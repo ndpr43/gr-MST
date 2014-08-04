@@ -136,6 +136,7 @@ namespace gr {
 
      public:
       route_impl(std::string routing,
+                 std::string hostIp,
                  bool repair, 
                  bool ack, 
                  bool destOnly, 

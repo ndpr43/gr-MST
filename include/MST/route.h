@@ -48,6 +48,7 @@ namespace gr {
        * creating new instances.
        */
       static sptr make(std::string routing,
+                       std::string hostIp,
                        bool repair, 
                        bool ack, 
                        bool destOnly, 

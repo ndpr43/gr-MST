@@ -5,6 +5,7 @@
   <category>MST</category>
   <import>import MST</import>
   <make>MST.route($routing,
+  				  $hostIp,
                   $repair, 
                   $ack, 
                   $destOnly, 
@@ -81,6 +82,12 @@
     	<name>Disabled</name>
     	<key>False</key>
     </option>
+  </param>
+  <param>
+	  <name>IP Address</name>
+	  <key>hostIp</key>
+	  <value>192.168.1.1</value>
+	  <type>string</type>
   </param>
   <param>
 	  <name>Maximum RREQ Retries</name>
