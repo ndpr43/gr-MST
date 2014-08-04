@@ -165,6 +165,7 @@ namespace gr {
       {
         if (pmt::is_null(vect) && pmt::dict_has_key(meta, pmt::mp("EM_UNREACHABLE_DEST_ADDR"))) // Link failure notification from mac layer
         {
+          std::cout<<"Line 168: Received Link broken notification from MAC layer"<<std::endl;
           unsigned char unreachableDest;
           pmt::pmt_t deadNode = pmt::dict_ref ( meta, pmt::mp("EM_UNREACHABLE_DEST_ADDR"), pmt::PMT_NIL );
           if(pmt::is_symbol(deadNode))
@@ -213,11 +214,14 @@ namespace gr {
         }
         else // Packet Routing
         {
+          std::cout<<"Line 216: Received IPv4 Packet"<<std::endl;
           // TODO: Optimize memory usage!!!!
           // TODO: Set some values to constant
           std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect);
+          std::cout<<"IP Packet type = " <<static_cast<unsigned int>(ipPacket[9])<<std::endl;
           if(ipPacket[9]==138) // MANET Control Packet
           {
+            std::cout<<"Line 223: Packet Type = MANET"<<std::endl;
             pmt::pmt_t srcMac_t = pmt::dict_ref ( meta, pmt::mp("EM_SRC_ID"), pmt::PMT_NIL );
             unsigned char srcMac = static_cast<unsigned char>(pmt::to_uint64(srcMac_t));
             
@@ -234,6 +238,7 @@ namespace gr {
             
             if(ttl>=0)
             {
+              std::cout<<"TTL is good"<<std::endl;
               if(udpDestPort==654) // AODV Control Packet
               {
                 //std::cout<<"1-4"<<std::endl;
@@ -244,6 +249,7 @@ namespace gr {
                 //std::cout<<"1-5"<<std::endl;
                   case 1: // TODO: RREQ
                   {
+                    std::cout<<"Line 223: Packet Type = RREQ"<<std::endl;
                     // Parse the packet
                     bool joinFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
                     bool repairFlag = static_cast<bool>(aodvPacket[2] & (1<<6));
@@ -407,7 +413,7 @@ namespace gr {
                   }
                   case 2: // TODO: RREP
                   {
-                    std::cout << "RECEIVED RREP" << std::endl;
+                    std::cout<<"Line 223: Packet Type = RREP"<<std::endl;
                     bool repairFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
                     bool ackFlag = static_cast<bool>(aodvPacket[2] & (1<<6));
                     unsigned char preFixSz = aodvPacket[2];
@@ -537,6 +543,7 @@ namespace gr {
                   }
                   case 3: // TODO: RERR 
                   {
+                    std::cout<<"Line 544: Packet Type = RERR"<<std::endl;
                     bool noDeleteFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
                     unsigned char destCnt = aodvPacket[3];
                     std::vector<unsigned int> unreachableDestIp(destCnt);
@@ -578,16 +585,25 @@ namespace gr {
               }
               else // MANET != AODV
               {
+                std::cout << "MANET != AODV"<<std::endl;
                 // Use data packet forwarding logic
               }
             }
-            else // TODO: Data Packet
-            { 
-              unsigned int destIpAddr = static_cast<unsigned int>(ipPacket[16])<<(3*8) |
-                  static_cast<unsigned int>(ipPacket[17])<<(2*8) |
-                  static_cast<unsigned int>(ipPacket[18])<<(8) |
-                  static_cast<unsigned int>(ipPacket[19]);
-              
+          }
+          else
+          { 
+            std::cout<<"Recieved Data Packet"<<std::endl;
+            unsigned int destIpAddr = static_cast<unsigned int>(ipPacket[16])<<(3*8) |
+                static_cast<unsigned int>(ipPacket[17])<<(2*8) |
+                static_cast<unsigned int>(ipPacket[18])<<(8) |
+                static_cast<unsigned int>(ipPacket[19]);
+            if(destIpAddr==HOST_IP)
+            {
+              message_port_pub(pmt::mp("to_host"),msg); 
+            }
+            else // Forward
+            {
+            
               bool found = false;
               int i=0;
               // Search for route
