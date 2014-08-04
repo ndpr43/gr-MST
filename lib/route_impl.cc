@@ -1,4 +1,4 @@
-re/* -*- c++ -*- */
+/* -*- c++ -*- */
 /* 
  * Copyright 2014 <+YOU OR YOUR COMPANY+>.
  * 
@@ -234,7 +234,7 @@ namespace gr {
             
             if(ttl>=0)
             {
-              if(updDestPort==654) // AODV Control Packet
+              if(udpDestPort==654) // AODV Control Packet
               {
                 //std::cout<<"1-4"<<std::endl;
                 std::vector<uint8_t> aodvPacket(udpPacket.begin()+(2*4),udpPacket.end());
