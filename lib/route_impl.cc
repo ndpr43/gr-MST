@@ -1,4 +1,4 @@
-/* -*- c++ -*- */
+re/* -*- c++ -*- */
 /* 
  * Copyright 2014 <+YOU OR YOUR COMPANY+>.
  * 
@@ -34,6 +34,7 @@ namespace gr {
     
     route::sptr
     route::make(std::string routing,
+                std::string hostIp,
                 bool repair, 
                 bool ack, 
                 bool destOnly, 
@@ -49,6 +50,7 @@ namespace gr {
     {
       return gnuradio::get_initial_sptr
         (new route_impl(routing,
+                        hostIp,
                         repair, 
                         ack, 
                         destOnly, 
@@ -67,6 +69,7 @@ namespace gr {
      * The private constructor
      */
     route_impl::route_impl(std::string routing,
+                           std::string hostIp,
                            bool repair, 
                            bool ack, 
                            bool destOnly, 
@@ -85,10 +88,23 @@ namespace gr {
     {
       // User input parameter initializations
       this->routing = routing;
-      this-> HOST_IP;
+      
+    
+      std::size_t period_pos1 = hostIp.find(".");
+      std::size_t period_pos2 = hostIp.find_first_of(".", (period_pos1+1));
+      std::size_t period_pos3 = hostIp.find_first_of(".", (period_pos2+1));
+      
+      HOST_IP = static_cast<unsigned int>(std::stoi(hostIp.substr(0,period_pos1)))<<(3*8);
+      HOST_IP |= static_cast<unsigned int>(std::stoi(hostIp.substr(period_pos1+1, (period_pos2-period_pos1-1))))<<(2*8);
+      HOST_IP |= static_cast<unsigned int>(std::stoi(hostIp.substr(period_pos2+1, (period_pos3-period_pos2-1))))<<(8);
+      HOST_IP |= static_cast<unsigned int>(std::stoi(hostIp.substr(period_pos3+1)));
+      
+
+      std::printf("Host IP address = %x",HOST_IP);
       if(routing=="AODV")
       {
-        HOST_IP = 0xC0A80002;
+        hostSeqNum = 0;
+        hostRreqId =0;
         ROUTE_REPAIR = repair;
         ROUTE_ACK = ack;
         DEST_ONLY = destOnly;
@@ -101,9 +117,6 @@ namespace gr {
         NET_DIAMETER = static_cast<unsigned char>(netDiameter);
         NODE_TRAVERSAL_TIME = std::chrono::milliseconds(nodeTraversalTime);
         ACTIVE_ROUTE_TIMEOUT = std::chrono::milliseconds(activeRouteTimeout);
-
-        hostRreqId = 0;
-        hostSeqNum = 0;
       }
       
       // Debug user input
@@ -147,7 +160,7 @@ namespace gr {
       pmt::pmt_t meta(pmt::car(msg)); // Get msg metadata
       pmt::pmt_t vect(pmt::cdr(msg)); // Get msg data
       char IHL; // Internet Header Length
-      unsigned short updDestPort;
+      unsigned short udpDestPort;
       if(routing=="AODV")
       {
         if (pmt::is_null(vect) && pmt::dict_has_key(meta, pmt::mp("EM_UNREACHABLE_DEST_ADDR"))) // Link failure notification from mac layer
@@ -160,7 +173,7 @@ namespace gr {
           }
           else if(pmt::is_number(deadNode))
           {
-            unreachableDest = static_cast<unsigned char>(pmt::to_uint64(deadNode));
+            unreachableDest = static_cast<unsigned char>(pmt::to_long(deadNode));
           }
           
           //unsigned int destIp = (unreachableDest & 0x000000FF) | (HOST_IP & 0xFFFFFF00) // Kludge assumes 255.255.255.0 Subnet mask
@@ -209,22 +222,26 @@ namespace gr {
             unsigned char srcMac = static_cast<unsigned char>(pmt::to_uint64(srcMac_t));
             
             IHL = ipPacket[0] & 0x0F; // Read Internet Header Length
+            //std::cout<<"IHL = "<<IHL<<std::endl;
             unsigned int srcIp = static_cast<unsigned int>(ipPacket[12])<<(3*8) 
               | static_cast<unsigned int>(ipPacket[13])<<(2*8) 
               | static_cast<unsigned int>(ipPacket[14])<<(8) 
               | static_cast<unsigned int>(ipPacket[15]);
             unsigned char ttl=ipPacket[8];
             std::vector<unsigned char> udpPacket(ipPacket.begin() + 4*(IHL+1),ipPacket.end());
-            updDestPort = static_cast<unsigned short>(static_cast<unsigned short>(udpPacket[2])<<8
+            udpDestPort = static_cast<unsigned short>(static_cast<unsigned short>(udpPacket[2])<<8
               | static_cast<unsigned short>(udpPacket[3]));
+            
             if(ttl>=0)
             {
               if(updDestPort==654) // AODV Control Packet
               {
+                //std::cout<<"1-4"<<std::endl;
                 std::vector<uint8_t> aodvPacket(udpPacket.begin()+(2*4),udpPacket.end());
                 unsigned char aodvType = aodvPacket[0];
                 switch ( aodvType ) 
                 {
+                //std::cout<<"1-5"<<std::endl;
                   case 1: // TODO: RREQ
                   {
                     // Parse the packet
