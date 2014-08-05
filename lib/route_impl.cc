@@ -308,11 +308,20 @@ namespace gr {
                       else
                         i++;
                     }
+
                     if(reqFound)
                     {
-                      // Do nothing. We've forwarded this rreq before
+                      // Delete the old RREQ entries
+                      if(rreqTbl[i].lifetime < std::chrono::system_clock::now())
+                       {
+                         rreqTbl.erase(rreqTbl.begin() + i);
+                         reqFound = false;
+                       }
+
+                      // Do nothing
                     }
-                    else // Haven't seen it before
+
+                    if(!reqFound)
                     {
                       // Make an rreq entry
                       rreqTblEntry entry = {destIp, rreqId, srcIp, ttl, 0, std::chrono::system_clock::now() + PATH_DISCOVER_TIME, PATH_DISCOVER_TIME, repairFlag};
@@ -439,22 +448,21 @@ namespace gr {
                     // Search RREQ route table and delete the serviced entry corresponding to RREP
                     int i = 0;
                     bool rreq_found = false;
-                    while( i<rreqTbl.size() && !rreq_found)
+                    while(i<rreqTbl.size())
                     {
                       std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
              
                       // If src IP and dest IP match. Here sequence number is not considered
+                      // Deleting all the RREQ entries for the destination.
                       if((rreqTbl[i].srcIp == origIp) && (rreqTbl[i].destIp == destIp))
+                       {
+                        rreqTbl.erase(rreqTbl.begin() + i);
                         rreq_found = true;
-                      else
                         i++;
+                       }
                     }
                     
-                    if(rreq_found == true)
-                    {
-                      rreqTbl.erase(rreqTbl.begin() + i);
-                    }
-                    else
+                    if(!rreq_found)
                     {
                       std::cout << "ERROR: Received RREP with Source & Destination IP not matching RREQ entries"<<std::endl;
                       std::cout << "SRC IP =" << origIp <<"and Dest IP = " << destIp <<std::endl;
