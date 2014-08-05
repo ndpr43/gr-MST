@@ -422,7 +422,7 @@ namespace gr {
                   }
                   case 2: // TODO: RREP
                   {
-                    std::cout<<"Line 223: Packet Type = RREP"<<std::endl;
+                    std::cout<<"Line 425: Packet Type = RREP"<<std::endl;
                     bool repairFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
                     bool ackFlag = static_cast<bool>(aodvPacket[2] & (1<<6));
                     unsigned char preFixSz = aodvPacket[2];
@@ -450,7 +450,7 @@ namespace gr {
                     bool rreq_found = false;
                     while(i<rreqTbl.size())
                     {
-                      std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
+                      //std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
              
                       // If src IP and dest IP match. Here sequence number is not considered
                       // Deleting all the RREQ entries for the destination.
@@ -458,8 +458,8 @@ namespace gr {
                        {
                         rreqTbl.erase(rreqTbl.begin() + i);
                         rreq_found = true;
-                        i++;
                        }
+                       i++;
                     }
                     
                     if(!rreq_found)
@@ -473,6 +473,7 @@ namespace gr {
                     i = 0;
                     bool revroute_found = false;
                     unsigned char next_hop;
+                    std::cout<<"Route Table size = "<< rTbl.size() << std::endl;
                     while( i < rTbl.size() && !revroute_found )
                     {
                       if((rTbl[i].destIp == origIp))
@@ -545,7 +546,7 @@ namespace gr {
 		    
 			 
                       }
-                        rx_data_host(); 
+                      rx_data_host(); 
                     }
                     break;
                   }
@@ -615,6 +616,7 @@ namespace gr {
               bool found = false;
               int i=0;
               // Search for route
+              std::cout<<"Route Table size = "<< rTbl.size() << std::endl;
               while(!found && i<rTbl.size())
               {
                 if(rTbl[i].destIp == destIpAddr)
@@ -705,147 +707,14 @@ namespace gr {
         //meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
         //meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
       }
+      return;
     }
     
     void route_impl::rx_msg_host(pmt::pmt_t msg)
     {
       txBuffer.push_back(msg);
-      pmt::pmt_t top;
-          std::cout << "1" << std::endl;
-      for(int i=0; i < txBuffer.size(); i++)
-      {
-        top = txBuffer.front();
-        pmt::pmt_t meta(pmt::car(top)); // Get msg metadata
-        pmt::pmt_t vect(pmt::cdr(top)); // Get msg data
-        std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect);          
-        unsigned int origIp = static_cast<unsigned int>(ipPacket[12])<<3*8 
-          | static_cast<unsigned int>(ipPacket[13])<<2*8 
-          | static_cast<unsigned int>(ipPacket[14])<<8 
-          | static_cast<unsigned int>(ipPacket[15]);
-        unsigned int destIp = static_cast<unsigned int>(ipPacket[16])<<3*8 
-          | static_cast<unsigned int>(ipPacket[17])<<2*8 
-          | static_cast<unsigned int>(ipPacket[18])<<8 
-          | static_cast<unsigned int>(ipPacket[19]);
-
-        //std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
-        //Check for loopback
-        // TODO: Add filter loopback control in the future
-        if(destIp == HOST_IP)
-        {
-          std::cout << "2" << std::endl;
-          message_port_pub(pmt::mp("to_host"), top);
-          txBuffer.erase(txBuffer.begin());
-        }
-        else //Not a loopback
-        {
-          std::cout << "3" << std::endl;
-          if(routing=="AODV")
-          {
-          std::cout << "4" << std::endl;
-            int j = 0;
-            bool routeFound = false;
-            // Search Routing table for route
-            while (j<rTbl.size() && !routeFound)
-            {
-              if(rTbl[j].destIp==destIp)
-                routeFound = true;
-              else
-                j++;
-            }
-            
-          std::cout << "4" << std::endl;
-            if(routeFound)
-            {
-          std::cout << "5" << std::endl;
-          std::cout << "rTbl destIp =" << rTbl[j].destIp << std::endl ;
-          std::cout << "route status = " << rTbl[j].valid << std::endl;
-              if(rTbl[j].valid) // if(Route is Valid)
-              {
-          std::cout << "6" << std::endl;
-                if(rTbl[j].lifetime > std::chrono::system_clock::now()) // Route is fresh
-                {
-          std::cout << "7" << std::endl;
-                  // Reset route lifetime
-                  rTbl[j].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
-                  // Reset reverse route lifetime
-                  for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
-                  {
-                    // Check rtbl[k] to see if its destination matches any
-                    // nodes in the precursors list of current active route
-                    for(int l=0; l<rTbl[j].precursors.size(); l++)  // TODO: only refresh the precursor we recieved from
-                    {
-                      // If match found reset the lifetime of that reverse route
-                      if(rTbl[k].destIp==rTbl[j].precursors[l])
-                        rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
-                    }
-                  }
-          std::cout << "8" << std::endl;
-                  // Send message
-                  
-                  meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(rTbl[j].nxtHop&0x000000FF))); // Set dest ID
-                  meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-                  pmt::pmt_t msg_out = pmt::cons(meta, vect);
-                  message_port_pub(pmt::mp("to_mac"), msg_out);
-                  // Delete message from queue
-                  txBuffer.erase(txBuffer.begin());
-          std::cout << "9" << std::endl;
-                }
-                else if(std::chrono::system_clock::now() - rTbl[j].lifetime  > DELETE_PERIOD) // Route is older than delete period
-                {
-          std::cout << "10" << std::endl;
-                  rTbl.erase(rTbl.begin()+j); // Erase old route
-                  newRoute(destIp); // Start new route procedure
-                }
-                else // Route has expired, but is not old enough to delete
-                {
-          std::cout << "11" << std::endl;
-                  // Set status to invalid
-                  rTbl[j].valid=false;
-                  if(ROUTE_REPAIR)
-                  {
-                    // TODO: Route repair procedure 
-          std::cout << "12" << std::endl;
-                  }
-                  else // Send RERR to precursers list 
-                  {
-          std::cout << "13" << std::endl;
-                    // Unicast Route Error to every route in precursors list
-                    for( int k = 0; rTbl[j].precursors.size(); k++)
-                    {
-                      sendRERR(rTbl[j].precursors[k], destIp, rTbl[j].nxtHop);
-                    }
-                    routeInvalid(j, destIp); // Invalid route procedure
-                  }
-                }
-              }
-              else // Route invalid
-              {                
-                routeInvalid(j, destIp);
-              }
-          std::cout << "14" << std::endl;
-            }
-            else // Route not found. Start new
-            {
-              std::cout << "15" << std::endl;
-              //std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
-              //std::cout << "Host IP = " << HOST_IP << std::endl;
-              //std::printf("---> Ip Orig Ip = %x and HOST_IP = %x \n", origIp, HOST_IP);
-              newRoute(destIp);
-              std::cout << "16" << std::endl;
-            }
-          }
-          else // Routing = None
-          {
-          std::cout << "17" << std::endl;
-            meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
-            meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-            pmt::pmt_t msg_out = pmt::cons(meta, vect);
-            message_port_pub(pmt::mp("to_mac"), msg_out);
-            txBuffer.erase(txBuffer.begin());
-          std::cout << "18" << std::endl;
-          }
-        }
-      }
+      rx_data_host();
+      return;
     }
     
     std::vector<unsigned char> route_impl::makeIP4Pkt(unsigned int sourceIp,
@@ -998,6 +867,7 @@ namespace gr {
       int k = 0;
       bool rreqFound = false;
       // Look for existing RREQ
+      std::cout<<"RREQ = "<< rreqTbl.size() << std::endl;
       while(k<rreqTbl.size() && !rreqFound)
       {
         if(rreqTbl[k].destIp==destIp)
@@ -1125,6 +995,7 @@ namespace gr {
       //rTbl.push_back(route);
       int i=0;
       bool rreq_found =false;
+      std::cout<<"RREQ = "<< rreqTbl.size() << std::endl;
       while (i < rreqTbl.size() && !rreq_found)
       {
         if(rreqTbl[i].destIp == destIp && rreqTbl[i].lifetime > std::chrono::system_clock::now())
@@ -1209,6 +1080,7 @@ namespace gr {
       bool routeFound = false;
       std::cout<< "a1  route table size:"<<rTbl.size() << std::endl;
       // Find  route
+      std::cout<<"Route Table size = "<< rTbl.size() << std::endl;
       while(i<rTbl.size() && !routeFound)
       {
         if(rTbl[i].destIp==destIp)
@@ -1282,6 +1154,7 @@ namespace gr {
       int i=0;
       bool found = false;
       // Find  route
+      std::cout<<"Route Table size = "<< rTbl.size() << std::endl;
       while(i<rTbl.size() && !found)
       {
         if(rTbl[i].destIp==origIp) // May need verification
@@ -1419,143 +1292,142 @@ namespace gr {
       std::cout << "Entering Rx_data_host" << std::endl;
       pmt::pmt_t top;
       std::cout << "1" << std::endl;
-      for(int i=0; i < txBuffer.size(); i++)
+      top = txBuffer.front();
+      pmt::pmt_t meta(pmt::car(top)); // Get msg metadata
+      pmt::pmt_t vect(pmt::cdr(top)); // Get msg data
+      std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect);          
+      unsigned int origIp = static_cast<unsigned int>(ipPacket[12])<<3*8 
+        | static_cast<unsigned int>(ipPacket[13])<<2*8 
+        | static_cast<unsigned int>(ipPacket[14])<<8 
+        | static_cast<unsigned int>(ipPacket[15]);
+      unsigned int destIp = static_cast<unsigned int>(ipPacket[16])<<3*8 
+        | static_cast<unsigned int>(ipPacket[17])<<2*8 
+        | static_cast<unsigned int>(ipPacket[18])<<8 
+        | static_cast<unsigned int>(ipPacket[19]);
+
+      //std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
+      //Check for loopback
+      // TODO: Add filter loopback control in the future
+      if(destIp == HOST_IP)
       {
-        top = txBuffer.front();
-        pmt::pmt_t meta(pmt::car(top)); // Get msg metadata
-        pmt::pmt_t vect(pmt::cdr(top)); // Get msg data
-        std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect);          
-        unsigned int origIp = static_cast<unsigned int>(ipPacket[12])<<3*8 
-          | static_cast<unsigned int>(ipPacket[13])<<2*8 
-          | static_cast<unsigned int>(ipPacket[14])<<8 
-          | static_cast<unsigned int>(ipPacket[15]);
-        unsigned int destIp = static_cast<unsigned int>(ipPacket[16])<<3*8 
-          | static_cast<unsigned int>(ipPacket[17])<<2*8 
-          | static_cast<unsigned int>(ipPacket[18])<<8 
-          | static_cast<unsigned int>(ipPacket[19]);
-
-        //std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
-        //Check for loopback
-        // TODO: Add filter loopback control in the future
-        if(destIp == HOST_IP)
+        std::cout << "2" << std::endl;
+        message_port_pub(pmt::mp("to_host"), top);
+        txBuffer.erase(txBuffer.begin());
+      }
+      else //Not a loopback
+      {
+        std::cout << "3" << std::endl;
+        if(routing=="AODV")
         {
-          std::cout << "2" << std::endl;
-          message_port_pub(pmt::mp("to_host"), top);
-          txBuffer.erase(txBuffer.begin());
-        }
-        else //Not a loopback
-        {
-          std::cout << "3" << std::endl;
-          if(routing=="AODV")
+        std::cout << "4" << std::endl;
+          int j = 0;
+          bool routeFound = false;
+          // Search Routing table for route
+          while (j<rTbl.size() && !routeFound)
           {
-          std::cout << "4" << std::endl;
-            int j = 0;
-            bool routeFound = false;
-            // Search Routing table for route
-            while (j<rTbl.size() && !routeFound)
+            if(rTbl[j].destIp==destIp)
+              routeFound = true;
+            else
+              j++;
+          }
+          
+        std::cout << "4" << std::endl;
+          if(routeFound)
+          {
+        std::cout << "5" << std::endl;
+        std::cout << "rTbl destIp =" << rTbl[j].destIp << std::endl ;
+        std::cout << "route status = " << rTbl[j].valid << std::endl;
+            if(rTbl[j].valid) // if(Route is Valid)
             {
-              if(rTbl[j].destIp==destIp)
-                routeFound = true;
-              else
-                j++;
-            }
-            
-          std::cout << "4" << std::endl;
-            if(routeFound)
-            {
-          std::cout << "5" << std::endl;
-          std::cout << "rTbl destIp =" << rTbl[j].destIp << std::endl ;
-          std::cout << "route status = " << rTbl[j].valid << std::endl;
-              if(rTbl[j].valid) // if(Route is Valid)
+        std::cout << "6" << std::endl;
+              if(rTbl[j].lifetime > std::chrono::system_clock::now()) // Route is fresh
               {
-          std::cout << "6" << std::endl;
-                if(rTbl[j].lifetime > std::chrono::system_clock::now()) // Route is fresh
+        std::cout << "7" << std::endl;
+                // Reset route lifetime
+                rTbl[j].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                // Reset reverse route lifetime
+                for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
                 {
-          std::cout << "7" << std::endl;
-                  // Reset route lifetime
-                  rTbl[j].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
-                  // Reset reverse route lifetime
-                  for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
+                  // Check rtbl[k] to see if its destination matches any
+                  // nodes in the precursors list of current active route
+                  for(int l=0; l<rTbl[j].precursors.size(); l++)  // TODO: only refresh the precursor we recieved from
                   {
-                    // Check rtbl[k] to see if its destination matches any
-                    // nodes in the precursors list of current active route
-                    for(int l=0; l<rTbl[j].precursors.size(); l++)  // TODO: only refresh the precursor we recieved from
-                    {
-                      // If match found reset the lifetime of that reverse route
-                      if(rTbl[k].destIp==rTbl[j].precursors[l])
-                        rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
-                    }
+                    // If match found reset the lifetime of that reverse route
+                    if(rTbl[k].destIp==rTbl[j].precursors[l])
+                      rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
                   }
-          std::cout << "8" << std::endl;
-                  // Send message
                   
-                  meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(rTbl[j].nxtHop&0x000000FF))); // Set dest ID
-                  meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-                  pmt::pmt_t msg_out = pmt::cons(meta, vect);
-                  message_port_pub(pmt::mp("to_mac"), msg_out);
-                  // Delete message from queue
-                  txBuffer.erase(txBuffer.begin());
-          std::cout << "9" << std::endl;
                 }
-                else if(std::chrono::system_clock::now() - rTbl[j].lifetime  > DELETE_PERIOD) // Route is older than delete period
+        std::cout << "8" << std::endl;
+                // Send message
+                
+                meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(rTbl[j].nxtHop&0x000000FF))); // Set dest ID
+                meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+                pmt::pmt_t msg_out = pmt::cons(meta, vect);
+                message_port_pub(pmt::mp("to_mac"), msg_out);
+                // Delete message from queue
+                txBuffer.erase(txBuffer.begin());
+        std::cout << "9" << std::endl;
+              }
+              else if(std::chrono::system_clock::now() - rTbl[j].lifetime  > DELETE_PERIOD) // Route is older than delete period
+              {
+        std::cout << "10" << std::endl;
+                rTbl.erase(rTbl.begin()+j); // Erase old route
+                newRoute(destIp); // Start new route procedure
+              }
+              else // Route has expired, but is not old enough to delete
+              {
+        std::cout << "11" << std::endl;
+                // Set status to invalid
+                rTbl[j].valid=false;
+                if(ROUTE_REPAIR)
                 {
-          std::cout << "10" << std::endl;
-                  rTbl.erase(rTbl.begin()+j); // Erase old route
-                  newRoute(destIp); // Start new route procedure
+                  // TODO: Route repair procedure 
+        std::cout << "12" << std::endl;
                 }
-                else // Route has expired, but is not old enough to delete
+                else // Send RERR to precursers list 
                 {
-          std::cout << "11" << std::endl;
-                  // Set status to invalid
-                  rTbl[j].valid=false;
-                  if(ROUTE_REPAIR)
+        std::cout << "13" << std::endl;
+                  // Unicast Route Error to every route in precursors list
+                  for( int k = 0; rTbl[j].precursors.size(); k++)
                   {
-                    // TODO: Route repair procedure 
-          std::cout << "12" << std::endl;
+                    sendRERR(rTbl[j].precursors[k], destIp, rTbl[j].nxtHop);
                   }
-                  else // Send RERR to precursers list 
-                  {
-          std::cout << "13" << std::endl;
-                    // Unicast Route Error to every route in precursors list
-                    for( int k = 0; rTbl[j].precursors.size(); k++)
-                    {
-                      sendRERR(rTbl[j].precursors[k], destIp, rTbl[j].nxtHop);
-                    }
-                    routeInvalid(j, destIp); // Invalid route procedure
-                  }
+                  routeInvalid(j, destIp); // Invalid route procedure
                 }
               }
-              else // Route invalid
-              {                
-                routeInvalid(j, destIp);
-              }
-          std::cout << "14" << std::endl;
             }
-            else // Route not found. Start new
-            {
-              std::cout << "15" << std::endl;
-              std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
-              std::cout << "Host IP = " << HOST_IP << std::endl;
-
-
-              std::printf("---> Ip Orig Ip = %x and HOST_IP = %x \n", origIp, HOST_IP);
-              newRoute(destIp);
-              std::cout << "16" << std::endl;
+            else // Route invalid
+            {                
+              routeInvalid(j, destIp);
             }
+        std::cout << "14" << std::endl;
           }
-          else // Routing = None
+          else // Route not found. Start new
           {
-          std::cout << "17" << std::endl;
-            meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
-            meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
-            pmt::pmt_t msg_out = pmt::cons(meta, vect);
-            message_port_pub(pmt::mp("to_mac"), msg_out);
-            txBuffer.erase(txBuffer.begin());
-          std::cout << "18" << std::endl;
+            std::cout << "15" << std::endl;
+            std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
+            std::cout << "Host IP = " << HOST_IP << std::endl;
+
+
+            std::printf("---> Ip Orig Ip = %x and HOST_IP = %x \n", origIp, HOST_IP);
+            newRoute(destIp);
+            std::cout << "16" << std::endl;
           }
+        }
+        else // Routing = None
+        {
+        std::cout << "17" << std::endl;
+          meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
+          meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+          pmt::pmt_t msg_out = pmt::cons(meta, vect);
+          message_port_pub(pmt::mp("to_mac"), msg_out);
+          txBuffer.erase(txBuffer.begin());
+        std::cout << "18" << std::endl;
         }
       }
       std::cout << "Exiting Rx_data_host" << std::endl;
+      return;
     }
     
 
