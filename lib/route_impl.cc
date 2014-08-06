@@ -300,6 +300,7 @@ namespace gr {
                     // Check to see if we've forwarded this rreq before
                     int i=0;
                     bool reqFound = false;
+                    std::cout << "rreqTbl size = " << rreqTbl.size() << std::endl;
                     while( i<rreqTbl.size() && !reqFound)
                     {
                       // If src IP and rreq ID match
@@ -340,10 +341,13 @@ namespace gr {
                       if(destIp == HOST_IP)
                       {
                         // Update my Seq Number
+                     
                         if(destSeqNum > hostSeqNum)
                           hostSeqNum++;
                         // Send rrep
+                        std::cout << "Calling sendRREP" << std::endl;
                         sendRREP(repairFlag, destIp, origIp, 0);
+                        std::cout << "Completed sendRREP" << std::endl;
                       }
                       else if(!destOnlyFlag)
                       {
@@ -450,7 +454,7 @@ namespace gr {
                     bool rreq_found = false;
                     while(i<rreqTbl.size())
                     {
-                      std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
+                      //std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
              
                       // If src IP and dest IP match. Here sequence number is not considered
                       // Deleting all the RREQ entries for the destination.
@@ -458,8 +462,8 @@ namespace gr {
                        {
                         rreqTbl.erase(rreqTbl.begin() + i);
                         rreq_found = true;
-                        i++;
                        }
+                      i++;
                     }
                     
                     if(!rreq_found)
@@ -607,6 +611,7 @@ namespace gr {
                 static_cast<unsigned int>(ipPacket[19]);
             if(destIpAddr==HOST_IP)
             {
+              std::cout << "Data to HOST" << std::endl;
               message_port_pub(pmt::mp("to_host"),msg); 
             }
             else // Forward
@@ -728,6 +733,7 @@ namespace gr {
           | static_cast<unsigned int>(ipPacket[19]);
 
         //std::cout << "Ip OrigIp = " << origIp << "  Ip DestIp = " << destIp << std::endl;
+
         //Check for loopback
         // TODO: Add filter loopback control in the future
         if(destIp == HOST_IP)
@@ -1282,6 +1288,7 @@ namespace gr {
       int i=0;
       bool found = false;
       // Find  route
+      std::cout << "rTbl size = " << rTbl.size() << std::endl;
       while(i<rTbl.size() && !found)
       {
         if(rTbl[i].destIp==origIp) // May need verification
@@ -1291,6 +1298,7 @@ namespace gr {
       }
       if(found)
       {
+        std::cout << "Found entry in rTbl" << std::endl;
         // Refresh route lifetime
         rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
         // Build RREP
@@ -1307,6 +1315,7 @@ namespace gr {
         meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(rTbl[i].nxtHop))); // Set dest ID
         meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
         pmt::pmt_t msg_out = pmt::cons(meta, outVect);
+        std::cout << "sendRREP: publish to_mac" << std::endl;
         message_port_pub(pmt::mp("to_mac"), msg_out);
       }
     }
