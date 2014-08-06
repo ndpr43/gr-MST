@@ -120,7 +120,7 @@ namespace gr {
       }
       
       // Debug user input
-      //std::cout << "Repair == " << ROUTE_REPAIR << std::endl;
+      std::cout << "DEST_ONLY == " << DEST_ONLY<< std::endl;
       //std::cout << "Routing == " << routing << std::endl;
       
       // Message Port initializations
@@ -250,32 +250,32 @@ namespace gr {
                   {
  //                   std::cout<<"Line 223: Packet Type = RREQ"<<std::endl;
                     // Parse the packet
-                    bool joinFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
-                    bool repairFlag = static_cast<bool>(aodvPacket[2] & (1<<6));
-                    bool gratuitousRREPFlag = static_cast<bool>(aodvPacket[2] & (1<<5));
-                    bool destOnlyFlag = static_cast<bool>(aodvPacket[2] & (1<<4));
-                    bool unkownSeqNum = static_cast<bool>(aodvPacket[2] & (1<<3));
-                    unsigned char hopCnt = aodvPacket[3];
-                    unsigned int rreqId = static_cast<unsigned int>(aodvPacket[4])<<(8*3) 
-                      | static_cast<unsigned int>(aodvPacket[5])<<(8*2) 
-                      | static_cast<unsigned int>(aodvPacket[6])<<(8*1)
-                      | static_cast<unsigned int>(aodvPacket[7]);
-                    unsigned int destIp = static_cast<unsigned int>(aodvPacket[8])<<(8*3) 
-                      | static_cast<unsigned int>(aodvPacket[9])<<(8*2) 
-                      | static_cast<unsigned int>(aodvPacket[10])<<(8*1)
-                      | static_cast<unsigned int>(aodvPacket[11]);
-                    unsigned int destSeqNum = static_cast<unsigned int>(static_cast<unsigned int>(aodvPacket[12])<<(8*3) 
-                      | static_cast<unsigned int>(aodvPacket[13])<<(8*2) 
-                      | static_cast<unsigned int>(aodvPacket[14])<<(8*1)
-                      | static_cast<unsigned int>(aodvPacket[15]));
-                    unsigned int origIp = static_cast<unsigned int>(aodvPacket[16])<<(8*3) 
-                      | static_cast<unsigned int>(aodvPacket[17])<<(8*2) 
-                      | static_cast<unsigned int>(aodvPacket[18])<<(8*1)
-                      | static_cast<unsigned int>(aodvPacket[19]);
-                    unsigned int origSeqNum = static_cast<int>(static_cast<unsigned int>(aodvPacket[20])<<(8*3) 
-                      | static_cast<unsigned int>(aodvPacket[21])<<(8*2) 
-                      | static_cast<unsigned int>(aodvPacket[22])<<(8*1) 
-                      | static_cast<unsigned int>(aodvPacket[23]));
+                    bool joinFlag = static_cast<bool>(aodvPacket[1] & (1<<7));
+                    bool repairFlag = static_cast<bool>(aodvPacket[1] & (1<<6));
+                    bool gratuitousRREPFlag = static_cast<bool>(aodvPacket[1] & (1<<5));
+                    bool destOnlyFlag = static_cast<bool>(aodvPacket[1] & (1<<4));
+                    bool unkownSeqNum = static_cast<bool>(aodvPacket[1] & (1<<3));
+                    unsigned char hopCnt = aodvPacket[2];
+                    unsigned int rreqId = static_cast<unsigned int>(aodvPacket[3])<<(8*3) 
+                      | static_cast<unsigned int>(aodvPacket[4])<<(8*2) 
+                      | static_cast<unsigned int>(aodvPacket[5])<<(8*1)
+                      | static_cast<unsigned int>(aodvPacket[6]);
+                    unsigned int destIp = static_cast<unsigned int>(aodvPacket[7])<<(8*3) 
+                      | static_cast<unsigned int>(aodvPacket[8])<<(8*2) 
+                      | static_cast<unsigned int>(aodvPacket[9])<<(8*1)
+                      | static_cast<unsigned int>(aodvPacket[10]);
+                    unsigned int destSeqNum = static_cast<unsigned int>(static_cast<unsigned int>(aodvPacket[11])<<(8*3) 
+                      | static_cast<unsigned int>(aodvPacket[12])<<(8*2) 
+                      | static_cast<unsigned int>(aodvPacket[13])<<(8*1)
+                      | static_cast<unsigned int>(aodvPacket[14]));
+                    unsigned int origIp = static_cast<unsigned int>(aodvPacket[15])<<(8*3) 
+                      | static_cast<unsigned int>(aodvPacket[16])<<(8*2) 
+                      | static_cast<unsigned int>(aodvPacket[17])<<(8*1)
+                      | static_cast<unsigned int>(aodvPacket[18]);
+                    unsigned int origSeqNum = static_cast<int>(static_cast<unsigned int>(aodvPacket[19])<<(8*3) 
+                      | static_cast<unsigned int>(aodvPacket[20])<<(8*2) 
+                      | static_cast<unsigned int>(aodvPacket[21])<<(8*1) 
+                      | static_cast<unsigned int>(aodvPacket[22]));
                     
                     // Have we seen this rreq before?
                     // If (no)
@@ -397,7 +397,7 @@ namespace gr {
                           //forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
                           pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
                           meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(255)));
-                          meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
+                          meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(false));  // Set ARQ   
                           pmt::pmt_t msg_out = pmt::cons(meta, outVect);
                           message_port_pub(pmt::mp("to_mac"), msg_out);
                         }
@@ -422,8 +422,8 @@ namespace gr {
                   case 2: // TODO: RREP
                   {
                     std::cout<<"Line 425: Packet Type = RREP"<<std::endl;
-                    bool repairFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
-                    bool ackFlag = static_cast<bool>(aodvPacket[2] & (1<<6));
+                    bool repairFlag = static_cast<bool>(aodvPacket[1] & (1<<7));
+                    bool ackFlag = static_cast<bool>(aodvPacket[1] & (1<<6));
                     unsigned char preFixSz = aodvPacket[2];
                     unsigned char hopCnt = aodvPacket[3];
                     unsigned int destIp = static_cast<unsigned int>(aodvPacket[4])<<(8*3)
@@ -438,15 +438,15 @@ namespace gr {
                       | static_cast<unsigned int>(aodvPacket[13])<<(8*2) 
                       | static_cast<unsigned int>(aodvPacket[14])<<(8*1)
                       | static_cast<unsigned int>(aodvPacket[15]);
-                    int lifetime = static_cast<int>(static_cast<unsigned int>(aodvPacket[8])<<(8*3)
-                      | static_cast<unsigned int>(aodvPacket[9])<<(8*2)
-                      | static_cast<unsigned int>(aodvPacket[10])<<(8*1)
-                      | static_cast<unsigned int>(aodvPacket[11]));
+                    int lifetime = static_cast<int>(static_cast<unsigned int>(aodvPacket[16])<<(8*3)
+                      | static_cast<unsigned int>(aodvPacket[17])<<(8*2)
+                      | static_cast<unsigned int>(aodvPacket[18])<<(8*1)
+                      | static_cast<unsigned int>(aodvPacket[19]));
 
 
                     // Search RREQ route table and delete the serviced entry corresponding to RREP
                     //std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
-                    std::cout << "RREQ Table Size = "<<rreqTbl.size()<<std::endl;
+                    //std::cout << "RREQ Table Size = "<<rreqTbl.size()<<std::endl;
                     int i = 0;
                     bool rreq_found = false;
                     while(i<rreqTbl.size())
@@ -480,8 +480,7 @@ namespace gr {
                         if((rTbl[i].destIp == origIp)) // Needs to be the destination in IPv4
                         {
                           rTbl[i].validDestSeq = true;
-                          rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
-                          
+                          rTbl[i].lifetime = std::chrono::system_clock::now() + std::chrono::milliseconds(lifetime);
                           for(int j=0; j<rTbl[i].precursors.size() && !precur_found;j++)
                           {
                             if(rTbl[i].precursors[j]==destIp)
@@ -501,18 +500,28 @@ namespace gr {
                          i++;
                         }
                       }
-              
-              
+
                       // If repair flag is set 
                       if (repairFlag)
                       {
-                        // To be done
+                        // TODO
                       }
                       else
                       {
-                        // If me being the source node of RREQ for which RREP was received.
-                        if (origIp == HOST_IP)
+                       // Add forward Route entry
+                       // Adding forward Route entry
+                       addRoute(destIp,
+                                origIp,        // <------------------
+                                destSeqNum,
+                                true, 
+                                true,
+                                false,
+                                false,
+                                hopCnt+1,
+                                srcMac);
+                        if(origIp == HOST_IP) // If I'm the originator of the rreq
                         {
+                          // Don't forward, but send ack if required
                           if(ackFlag)
                           {
                             // Send RACK
@@ -521,34 +530,10 @@ namespace gr {
                           {
                             // Do not send RACK
                           }
-                
-                          // Add forward Route entry
-                          addRoute(destIp,
-                                     HOST_IP,      // <------------------
-                                     destSeqNum,
-                                     true, 
-                                     true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
-                                     false,
-                                     false,
-                                     hopCnt+1,
-                                     srcMac);
-                           
-      //                    std::cout << "RREP validating route: Status =" << rTbl.back().valid << std::endl;
                         }
-                        else
+                        else // I'm not the originator of the rreq
                         {
-                           // Adding forward Route entry
-                           addRoute(destIp,
-                                    origIp,        // <------------------
-                                    destSeqNum,
-                                    true, 
-                                    true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
-                                    false,
-                                    false,
-                                    hopCnt+1,
-                                    srcMac);
-    
-                           // Forwarding the RREP
+                          // Forward the rrep
                           decTTL(ipPacket);
                           ipPacket[31]++; // Increment Hop Count
                           pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
@@ -556,19 +541,17 @@ namespace gr {
                           meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
                           pmt::pmt_t msg_out = pmt::cons(meta, outVect);
                           message_port_pub(pmt::mp("to_mac"), msg_out);
-          
-         
                         }
-                        rx_data_host(); 
                       }
+                      rx_data_host(); 
                     }
                     break;
                   }
                   case 3: // TODO: RERR 
                   {
 //                    std::cout<<"Line 544: Packet Type = RERR"<<std::endl;
-                    bool noDeleteFlag = static_cast<bool>(aodvPacket[2] & (1<<7));
-                    unsigned char destCnt = aodvPacket[3];
+                    bool noDeleteFlag = static_cast<bool>(aodvPacket[1] & (1<<7));
+                    unsigned char destCnt = aodvPacket[2];
                     std::vector<unsigned int> unreachableDestIp(destCnt);
                     std::vector<unsigned int> unreachableSeqNum(destCnt);
                     int i=0;
@@ -615,7 +598,7 @@ namespace gr {
           }
           else
           { 
-//            std::cout<<"Recieved Data Packet"<<std::endl;
+            std::cout<<"Recieved Data Packet"<<std::endl;
             unsigned int destIpAddr = static_cast<unsigned int>(ipPacket[16])<<(3*8) |
                 static_cast<unsigned int>(ipPacket[17])<<(2*8) |
                 static_cast<unsigned int>(ipPacket[18])<<(8) |
@@ -626,7 +609,6 @@ namespace gr {
             }
             else // Forward
             {
-            
               bool found = false;
               int i=0;
               // Search for route
@@ -812,6 +794,7 @@ namespace gr {
                                                         unsigned int origIp,
                                                         unsigned int origSeqNum)
     {
+      std::cout<<"makerreq: D = "<< D << std::endl;
       std::vector<unsigned char> pkt (6*4); 
       pkt[0]=1;
       pkt[1]= 0x00 | static_cast<unsigned char>(J)<<7 
@@ -949,6 +932,7 @@ namespace gr {
       // Build UDP packet
       std::vector<uint8_t> udp = makeUDPPkt();
       // Build AODV RREQ packet
+      std::cout<< "DEST_ONLY == " << DEST_ONLY << std::endl;
       std::vector<uint8_t> rreq = makeRREQPkt (
           hostRreqId, 
           destIp, 
@@ -963,11 +947,12 @@ namespace gr {
       // Assemble packet
       pkt.insert(pkt.end(), udp.begin(), udp.end());
       pkt.insert(pkt.end(), rreq.begin(), rreq.end());
+      //std::cout<< "Line 968: rreq flags"<<static_cast<int>(rreq[1])<<endl;
       // Publish to port
       pmt::pmt_t outVect = pmt::init_u8vector (pkt.size(), pkt);
       pmt::pmt_t meta = pmt::make_dict();
       meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(255))); // Set dest ID
-      meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+      meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(false));  // Set ARQ
       pmt::pmt_t msg_out = pmt::cons(meta, outVect);
       message_port_pub(pmt::mp("to_mac"), msg_out);
       return;
@@ -1435,7 +1420,7 @@ namespace gr {
           {
           std::cout << "17" << std::endl;
             meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(255)); // Set dest ID
-            meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
+            meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(false));  // Set ARQ
             pmt::pmt_t msg_out = pmt::cons(meta, vect);
             message_port_pub(pmt::mp("to_mac"), msg_out);
             txBuffer.erase(txBuffer.begin());
