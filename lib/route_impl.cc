@@ -515,9 +515,20 @@ namespace gr {
                       }
                       else
                       {
-                        // If me being the source node of RREQ for which RREP was received.
-                        if (origIp == HOST_IP)
+                       // Add forward Route entry
+                       // Adding forward Route entry
+                       addRoute(destIp,
+                                origIp,        // <------------------
+                                destSeqNum,
+                                true, 
+                                true,
+                                false,
+                                false,
+                                hopCnt+1,
+                                srcMac);
+                        if(origIp == HOST_IP) // If I'm the originator of the rreq
                         {
+                          // Don't forward, but send ack if required
                           if(ackFlag)
                           {
                             // Send RACK
@@ -526,35 +537,10 @@ namespace gr {
                           {
                             // Do not send RACK
                           }
-                
-                          // Add forward Route entry
-                          addRoute(destIp,
-                                     HOST_IP,      // <------------------
-                                     destSeqNum,
-                                     true, 
-                                     true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
-                                     false,
-                                     false,
-                                     hopCnt+1,
-                                     srcMac);
-                           
-      //                    std::cout << "RREP validating route: Status =" << rTbl.back().valid << std::endl;
                         }
-                        else
+                        else // I'm not the originator of the rreq
                         {
-                           // Adding forward Route entry
-			   std::cout << (HOST_IP && 0x000000FF) << "Forwarding RREP" << std::cout;
-                           addRoute(destIp,
-                                    origIp,        // <------------------
-                                    destSeqNum,
-                                    true, 
-                                    true,  //!ROUTE_ACK, // If ack is needed don't mark as a valid route yet
-                                    false,
-                                    false,
-                                    hopCnt+1,
-                                    srcMac);
-    
-                           // Forwarding the RREP
+                          // Forward the rrep
                           decTTL(ipPacket);
                           ipPacket[31]++; // Increment Hop Count
                           pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
@@ -562,11 +548,9 @@ namespace gr {
                           meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
                           pmt::pmt_t msg_out = pmt::cons(meta, outVect);
                           message_port_pub(pmt::mp("to_mac"), msg_out);
-          
-         
                         }
-                        rx_data_host(); 
                       }
+                      rx_data_host(); 
                     }
                     break;
                   }
