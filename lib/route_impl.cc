@@ -168,14 +168,7 @@ namespace gr {
    //       std::cout<<"Line 168: Received Link broken notification from MAC layer"<<std::endl;
           unsigned char unreachableDest;
           pmt::pmt_t deadNode = pmt::dict_ref ( meta, pmt::mp("EM_UNREACHABLE_DEST_ADDR"), pmt::PMT_NIL );
-          if(pmt::is_symbol(deadNode))
-          {
-            unreachableDest = static_cast<unsigned char>(std::stoi(pmt::symbol_to_string(deadNode)));
-          }
-          else if(pmt::is_number(deadNode))
-          {
-            unreachableDest = static_cast<unsigned char>(pmt::to_long(deadNode));
-          }
+          unreachableDest = static_cast<unsigned char>(pmt::to_uint64(deadNode))
           
           //unsigned int destIp = (unreachableDest & 0x000000FF) | (HOST_IP & 0xFFFFFF00) // Kludge assumes 255.255.255.0 Subnet mask
           if(ROUTE_REPAIR)
@@ -188,7 +181,8 @@ namespace gr {
           }
           else // Send RERR to affected nodes and Routes
           {
-            for(int i=0; i<rTbl.size(); i++)
+            int i = 0;
+            while(i<rTbl.size())
             {
               // Search for affected routes
               if(rTbl[i].nxtHop==unreachableDest)
@@ -208,6 +202,11 @@ namespace gr {
                     }
                   }
                 }
+                rTbl.erase(rTbl.begin()+i)
+              }
+              else
+              {
+                i++;
               }
             }
           }
