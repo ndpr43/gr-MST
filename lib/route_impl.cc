@@ -222,11 +222,12 @@ namespace gr {
 	  unsigned short checksum;
 	  checksum=ip4_checksum(ipPacket);
 	  std::printf("%x : Checksum of received IP packet is %x\n",  (HOST_IP & 0x000000FF), checksum);
+          pmt::pmt_t srcMac_t = pmt::dict_ref ( meta, pmt::mp("EM_SRC_ID"), pmt::PMT_NIL );
+          unsigned char srcMac = static_cast<unsigned char>(pmt::to_uint64(srcMac_t));
           if(ipPacket[9]==138) // MANET Control Packet
           {
             std::cout<< (HOST_IP & 0x000000FF)<<" Line 223: Packet Type = MANET"<<std::endl;
-            pmt::pmt_t srcMac_t = pmt::dict_ref ( meta, pmt::mp("EM_SRC_ID"), pmt::PMT_NIL );
-            unsigned char srcMac = static_cast<unsigned char>(pmt::to_uint64(srcMac_t));
+            
             
             IHL = ipPacket[0] & 0x0F; // Read Internet Header Length
             //std::cout<<"IHL = "<<IHL<<std::endl;
@@ -625,16 +626,11 @@ namespace gr {
             {
               std::cout << (HOST_IP & 0x000000FF)<< "Data to Host"<<std::endl;
               message_port_pub(pmt::mp("to_host"),msg);
+
               for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
               {
-                // Check rtbl[k] to see if its destination matches any
-                // nodes in the precursors list of current active route
-                for(int l=0; l<rTbl[i].precursors.size(); l++)  // TODO: only refresh the precursor we recieved from
-                {
-                  // If match found reset the lifetime of that reverse route
-                  if(rTbl[k].destIp==rTbl[i].precursors[l])
+                if(rTbl[k].nxtHop==srcMac)
                     rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
-                }
               } 
             }
             else // Forward
