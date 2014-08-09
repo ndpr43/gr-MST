@@ -214,10 +214,14 @@ namespace gr {
         else // Packet Routing
         {
           std::cout<< (HOST_IP & 0x000000FF)<<" Line 216: Received IPv4 Packet"<<std::endl;
+
           // TODO: Optimize memory usage!!!!
           // TODO: Set some values to constant
           std::vector<uint8_t> ipPacket = pmt::u8vector_elements(vect);
           std::cout<< (HOST_IP & 0x000000FF)<<" IP Packet type = " <<static_cast<unsigned int>(ipPacket[9])<<std::endl;
+	  unsigned short checksum;
+	  checksum=ip4_checksum(ipPacket);
+	  std::printf("%x : Checksum of received IP packet is %x\n",  (HOST_IP & 0x000000FF), checksum);
           if(ipPacket[9]==138) // MANET Control Packet
           {
             std::cout<< (HOST_IP & 0x000000FF)<<" Line 223: Packet Type = MANET"<<std::endl;
@@ -231,7 +235,7 @@ namespace gr {
               | static_cast<unsigned int>(ipPacket[14])<<(8) 
               | static_cast<unsigned int>(ipPacket[15]);
             unsigned char ttl=ipPacket[8];
-            std::vector<unsigned char> udpPacket(ipPacket.begin() + 4*(IHL+1),ipPacket.end());
+            std::vector<unsigned char> udpPacket(ipPacket.begin() + 4*(IHL),ipPacket.end());
             udpDestPort = static_cast<unsigned short>(static_cast<unsigned short>(udpPacket[2])<<8
               | static_cast<unsigned short>(udpPacket[3]));
             
@@ -414,7 +418,7 @@ namespace gr {
                         decTTL(ipPacket);
                         ipPacket[31]++; // Increment Hop Count
                         //forward(ipPacket,BROADCAST_IP, static_cast<unsigned char>(BROADCAST_IP*0x000000FF));
-                        std::cout << (HOST_IP && 0x000000FF) << " Forwarding RREQ" << std::endl;
+                        std::cout << (HOST_IP & 0x000000FF) << " Forwarding RREQ" << std::endl;
                         pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
                         meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(255)));
                         meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(false));  // Set ARQ   
@@ -426,7 +430,8 @@ namespace gr {
                   }
                   case 2: // TODO: RREP
                   {
-                    std::cout<< (HOST_IP && 0x000000FF) <<"Line 425: Packet Type = RREP"<<std::endl;
+                    std::cout<< (HOST_IP & 0x000000FF) <<"Line 425: Packet Type = RREP"<<std::endl;
+                    std::cout<< (HOST_IP & 0x000000FF) << "RREP received from = " << static_cast<long>(srcMac) << std::endl;
                     bool repairFlag = static_cast<bool>(aodvPacket[1] & (1<<7));
                     bool ackFlag = static_cast<bool>(aodvPacket[1] & (1<<6));
                     unsigned char preFixSz = aodvPacket[2];
@@ -451,7 +456,7 @@ namespace gr {
 
                     // Search RREQ route table and delete the serviced entry corresponding to RREP
                     //std::cout << "rSRC IP =" << rreqTbl[i].srcIp <<"and rDest IP = " << rreqTbl[i].destIp <<std::endl;
-                    std::cout << (HOST_IP && 0x000000FF)<< "RREQ Table Size = "<<rreqTbl.size()<<std::endl;
+                    std::cout << (HOST_IP & 0x000000FF)<< "RREQ Table Size = "<<rreqTbl.size()<<std::endl;
                     int i = 0;
                     bool rreq_found = false;
                     while(i<rreqTbl.size())
@@ -469,8 +474,8 @@ namespace gr {
                     
                     if(!rreq_found)
                     {
-                      std::cout << (HOST_IP && 0x000000FF)<< "ERROR: Received RREP with Source & Destination IP not matching RREQ entries"<<std::endl;
-                      std::cout << (HOST_IP && 0x000000FF)<< "SRC IP =" << origIp <<"and Dest IP = " << destIp <<std::endl;
+                      std::cout << (HOST_IP & 0x000000FF)<< "ERROR: Received RREP with Source & Destination IP not matching RREQ entries"<<std::endl;
+                      std::cout << (HOST_IP & 0x000000FF)<< "SRC IP =" << origIp <<"and Dest IP = " << destIp <<std::endl;
                     }
                     else
                     {
@@ -479,7 +484,7 @@ namespace gr {
                       bool revroute_found = false;
                       bool precur_found = false;
                       unsigned char next_hop;
-                      std::cout<<"Route Table size = "<< rTbl.size() << std::endl;
+                      //std::cout<<"Route Table size = "<< rTbl.size() << std::endl;
                       while( i < rTbl.size() && !revroute_found )
                       {
                         if((rTbl[i].destIp == origIp)) // Needs to be the destination in IPv4
@@ -528,6 +533,7 @@ namespace gr {
                                 srcMac);
                         if(origIp == HOST_IP) // If I'm the originator of the rreq
                         {
+                          std::cout << (HOST_IP & 0x000000FF)<< "Received RREP for RREQ which I sent" << std::endl;
                           // Don't forward, but send ack if required
                           if(ackFlag)
                           {
@@ -543,6 +549,9 @@ namespace gr {
                           // Forward the rrep
                           decTTL(ipPacket);
                           ipPacket[31]++; // Increment Hop Count
+
+                          std::cout << (HOST_IP & 0x000000FF)<< "Forwarding RREP to " << (static_cast<long>(next_hop)) << std::endl;
+
                           pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);     
                           meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(next_hop)));
                           meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ   
@@ -605,18 +614,21 @@ namespace gr {
           }
           else
           { 
-//            std::cout<<"Recieved Data Packet"<<std::endl;
+            std::cout << (HOST_IP & 0x000000FF)<< "Recieved Data Packet"<<std::endl;
             unsigned int destIpAddr = static_cast<unsigned int>(ipPacket[16])<<(3*8) |
                 static_cast<unsigned int>(ipPacket[17])<<(2*8) |
                 static_cast<unsigned int>(ipPacket[18])<<(8) |
                 static_cast<unsigned int>(ipPacket[19]);
+            std::cout << (HOST_IP & 0x000000FF)<< "IPv4 Destination IP Addr:"<< destIpAddr <<std::endl;
+
             if(destIpAddr==HOST_IP)
             {
+              std::cout << (HOST_IP & 0x000000FF)<< "Data to Host"<<std::endl;
               message_port_pub(pmt::mp("to_host"),msg); 
             }
             else // Forward
             {
-            
+
               bool found = false;
               int i=0;
               // Search for route
@@ -635,10 +647,13 @@ namespace gr {
                            
               if(found)
               {
+                std::cout << (HOST_IP & 0x000000FF)<< "Route found for Data Packet"<<std::endl;
                 if(rTbl[i].valid) // if(Route is Valid)
                 {
+                  std::cout << (HOST_IP & 0x000000FF)<< "Route for Data packet is valid"<<std::endl;
                   if(rTbl[i].lifetime > std::chrono::system_clock::now()) // Route is fresh
                   {
+                    std::cout << (HOST_IP & 0x000000FF)<< "Route for Data packet is fresh"<<std::endl;
                     // Reset route lifetime
                     rTbl[i].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
                     // Reset reverse route lifetime
@@ -654,9 +669,16 @@ namespace gr {
                       }
                     }
                     // Send message
+                    std::printf ("%x: Forwarding Data Packet to %x\n", (HOST_IP & 0x000000FF),rTbl[i].nxtHop);
                     decTTL(ipPacket);
+
+                    for (int a = 0; a<ipPacket.size(); a++)
+                    {
+                      std::printf("%x ", ipPacket[a]);
+                    }
+                    std::cout << std::endl << "=====================================================================================" << std::endl;
                     pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
-                    meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<unsigned char>(rTbl[i].nxtHop))); // Set dest ID
+                    meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(rTbl[i].nxtHop))); // Set dest ID
                     meta = dict_add(meta, pmt::string_to_symbol("EM_USE_ARQ"), pmt::from_bool(true));  // Set ARQ
                     pmt::pmt_t msg_out = pmt::cons(meta, outVect);
                     message_port_pub(pmt::mp("to_mac"), msg_out);

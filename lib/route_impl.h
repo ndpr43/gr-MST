@@ -99,7 +99,7 @@ namespace gr {
                                             unsigned int destIp=0,
                                             unsigned int ttl=64,
                                             unsigned char version=4,
-                                            unsigned char ihl=4,
+                                            unsigned char ihl=5,
                                             unsigned char dscp=0,
                                             unsigned char ecn=0,
                                             unsigned char flags=0,
