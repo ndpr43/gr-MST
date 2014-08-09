@@ -1031,7 +1031,7 @@ namespace gr {
   //    std::cout<<"RREQ = "<< rreqTbl.size() << std::endl;
       while (i < rreqTbl.size() && !rreq_found)
       {
-        if(rreqTbl[i].destIp == destIp && rreqTbl[i].lifetime > std::chrono::system_clock::now())
+        if(rreqTbl[i].destIp == destIp)
           rreq_found = true;
         else
           i++;
