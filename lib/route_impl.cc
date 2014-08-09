@@ -624,7 +624,18 @@ namespace gr {
             if(destIpAddr==HOST_IP)
             {
               std::cout << (HOST_IP & 0x000000FF)<< "Data to Host"<<std::endl;
-              message_port_pub(pmt::mp("to_host"),msg); 
+              message_port_pub(pmt::mp("to_host"),msg);
+              for(int k=0; k<rTbl.size(); k++) // Search table for reverse route(s)
+              {
+                // Check rtbl[k] to see if its destination matches any
+                // nodes in the precursors list of current active route
+                for(int l=0; l<rTbl[i].precursors.size(); l++)  // TODO: only refresh the precursor we recieved from
+                {
+                  // If match found reset the lifetime of that reverse route
+                  if(rTbl[k].destIp==rTbl[i].precursors[l])
+                    rTbl[k].lifetime = std::chrono::system_clock::now() + ACTIVE_ROUTE_TIMEOUT;
+                }
+              } 
             }
             else // Forward
             {
@@ -672,10 +683,10 @@ namespace gr {
                     std::printf ("%x: Forwarding Data Packet to %x\n", (HOST_IP & 0x000000FF),rTbl[i].nxtHop);
                     decTTL(ipPacket);
 
-                    for (int a = 0; a<ipPacket.size(); a++)
-                    {
-                      std::printf("%x ", ipPacket[a]);
-                    }
+                    //for (int a = 0; a<ipPacket.size(); a++)
+                    //{
+                   //   std::printf("%x ", ipPacket[a]);
+                   // }
                     std::cout << std::endl << "=====================================================================================" << std::endl;
                     pmt::pmt_t outVect = pmt::init_u8vector (ipPacket.size(), ipPacket);
                     meta = dict_add(meta, pmt::string_to_symbol("EM_DEST_ADDR"), pmt::from_long(static_cast<long>(rTbl[i].nxtHop))); // Set dest ID
