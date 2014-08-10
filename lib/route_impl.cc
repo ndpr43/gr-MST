@@ -657,7 +657,12 @@ namespace gr {
                 std::cout << (HOST_IP & 0x000000FF)<< "Route found for Data Packet"<<std::endl;
                 if(rTbl[i].valid) // if(Route is Valid)
                 {
+                  std::cout << (HOST_IP & 0x000000FF) << "Reading Route lifetime:" << std::endl;
+
+                  //if (rTbl[i].lifetime > std::chrono::system_clock::now())
+
                   std::cout << (HOST_IP & 0x000000FF)<< "Route for Data packet is valid"<<std::endl;
+
                   if(rTbl[i].lifetime > std::chrono::system_clock::now()) // Route is fresh
                   {
                     std::cout << (HOST_IP & 0x000000FF)<< "Route for Data packet is fresh"<<std::endl;
@@ -692,6 +697,7 @@ namespace gr {
                   }
                   else // Route has expired, but is not old enough to delete
                   {
+                    std::cout << (HOST_IP & 0x000000FF)<< "Route is Old- have to send RERR" << std::endl;  
                     // Set status to invalid
                     rTbl[i].valid=false;
                     if(ROUTE_REPAIR)
@@ -701,17 +707,18 @@ namespace gr {
                     else // Send RERR to precursers list 
                     {
                       // Unicast Route Error to every route in precursors list
-                      for( int k = 0; rTbl[i].precursors.size(); k++)
-                      {
-                        sendRERR(rTbl[i].precursors[k], destIpAddr, rTbl[i].nxtHop);
-                      }
+                      //for( int k = 0; rTbl[i].precursors.size(); k++)
+                      //{
+                      //  sendRERR(rTbl[i].precursors[k], destIpAddr, rTbl[i].nxtHop);
+                      //}
                     }
                     if(std::chrono::system_clock::now() - rTbl[i].lifetime > DELETE_PERIOD) // Route is older than delete period
                       rTbl.erase(rTbl.begin()+i); // Erase old route
                   }
                 }
                 else // Route invalid
-                {                
+                {     
+                  std::cout << (HOST_IP & 0x000000FF)<< "Route is Invalid - have to send RERR" << std::endl;           
                   // Set status to invalid
                   rTbl[i].valid=false;
                   if(ROUTE_REPAIR)
@@ -721,10 +728,10 @@ namespace gr {
                   else // Send RERR to precursers list 
                   {
                     // Unicast Route Error to every route in precursors list
-                    for( int k = 0; rTbl[i].precursors.size(); k++)
-                    {
-                      sendRERR(rTbl[i].precursors[k], destIpAddr, rTbl[i].nxtHop);
-                    }
+                    //for( int k = 0; rTbl[i].precursors.size(); k++)
+                    //{
+                    //  sendRERR(rTbl[i].precursors[k], destIpAddr, rTbl[i].nxtHop);
+                    //}
                   }
                   if(std::chrono::system_clock::now() - rTbl[i].lifetime > DELETE_PERIOD) // Route is older than delete period
                     rTbl.erase(rTbl.begin()+i); // Erase old route
@@ -1031,7 +1038,7 @@ namespace gr {
   //    std::cout<<"RREQ = "<< rreqTbl.size() << std::endl;
       while (i < rreqTbl.size() && !rreq_found)
       {
-        if(rreqTbl[i].destIp == destIp)
+        if(rreqTbl[i].destIp == destIp && rreqTbl[i].lifetime > std::chrono::system_clock::now())
           rreq_found = true;
         else
           i++;
